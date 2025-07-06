@@ -19,6 +19,7 @@
                 <button type="submit" class="nav-button-style" style="padding: 5px 10px;">Add User</button>
             </form>
             {% endif %}
+            <a href="{{ url_for('dashboard') }}" class="nav-button-style" style="margin-right: 10px;">Analytics Dashboard</a>
             <div class="settings-link-container">
                  <a href="{{ url_for('settings') }}" class="nav-button-style">Settings</a>
             </div>
@@ -103,45 +104,59 @@
         if (clockElement) clockElement.textContent = timeString;
     }
 
-    // Function to apply hover/active styles to tabs (top border highlight)
-    function applyTabHoverAndActiveStyles() {
-        const tabs = document.querySelectorAll('.top-bar .tab'); // Targeting tabs in .top-bar for index.html
-        tabs.forEach(tab => {
-            const themeColor = tab.dataset.themeColor;
-            if (themeColor) {
-                if (tab.classList.contains('active-tab')) {
-                    tab.style.borderTopColor = themeColor;
-                }
-                tab.addEventListener('mouseenter', () => {
-                    if (!tab.classList.contains('active-tab')) {
-                        tab.style.borderTopColor = themeColor;
-                    }
-                });
-                tab.addEventListener('mouseleave', () => {
-                    if (!tab.classList.contains('active-tab')) {
-                        tab.style.borderTopColor = 'transparent';
-                    }
-                });
+    function applyUserCustomizations() {
+        const userCards = document.querySelectorAll('.user-summary-card');
+        userCards.forEach(card => {
+            const userId = card.id.replace('card-', ''); // e.g., "veer" from "card-veer"
+            // The users array from Flask is like ["Veer", "Vardaan"]. We need to match casing or be careful.
+            // Let's assume userId from card.id is lowercase.
+            // We need the original username casing to match localStorage keys if they were stored with original casing.
+            // However, flask_users_list in settings.html implies original casing is used for keys.
+            // Let's find the original username from the h2 tag as a robust way.
+            const userNameElement = card.querySelector('h2');
+            if (!userNameElement) return;
+            const originalUserName = userNameElement.textContent.trim(); // This is the "Veer", "Vardaan" etc.
+
+            // 1. Update Display Name
+            const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+            if (storedDisplayName) {
+                userNameElement.textContent = storedDisplayName;
+            }
+
+            // 2. Update Avatar
+            const storedAvatarUrl = localStorage.getItem(`user_${originalUserName}_avatarUrl`);
+            const avatarPlaceholder = card.querySelector(`#avatar-${userId}`); // e.g., #avatar-veer
+            if (storedAvatarUrl && avatarPlaceholder) {
+                avatarPlaceholder.textContent = ''; // Clear the initial character
+                const img = document.createElement('img');
+                img.src = storedAvatarUrl;
+                img.alt = originalUserName + "'s Avatar";
+                img.style.width = '100%'; // Make image fill the placeholder
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                avatarPlaceholder.appendChild(img);
+            }
+
+            // 3. Update Accent Color (applying to card background)
+            const storedAccentColor = localStorage.getItem(`user_${originalUserName}_accentColor`);
+            if (storedAccentColor) {
+                card.style.backgroundColor = storedAccentColor;
+                // May need to adjust text color for contrast if background gets too dark/light
+                // For simplicity, this is omitted for now.
             }
         });
     }
 
+
+    // Function to apply hover/active styles to tabs (top border highlight) - Not currently used in index.html as tabs are gone
+    // function applyTabHoverAndActiveStyles() { ... }
+
     function initializePageFeatures() {
         console.log('[Rollback] Initializing page features for index.html.');
         updateClockIST();
-        applyTabHoverAndActiveStyles(); // Kept for tab top border highlight
-
-        // Save lastActiveTabIdentifier (href of the active tab)
-        const activeTab = document.querySelector('.top-bar .tab.active-tab'); // Target .top-bar for index
-        if (activeTab) {
-            const activeTabIdentifier = activeTab.getAttribute('href');
-            if (activeTabIdentifier) {
-                localStorage.setItem('lastActiveTabIdentifier', activeTabIdentifier);
-                console.log('[Rollback] Saved lastActiveTabIdentifier:', activeTabIdentifier);
-            }
-            // localStorage.removeItem('lastActiveTabColor'); // Removed
-        }
-        // localStorage.removeItem('themePreference'); // Removed
+        applyUserCustomizations(); // Apply customizations on load
+        // Note: Tab-related logic previously here (applyTabHoverAndActiveStyles, lastActiveTabIdentifier)
+        // has been removed as it's not applicable to the current index.html structure.
     }
 
     // Initialize features on DOMContentLoaded
