@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Task - {{ username }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 1em; }
+        label { display: block; margin-top: 0.5em; }
+        input[type="text"] { width: 300px; padding: 0.3em; margin-bottom: 0.5em; }
+        button { padding: 0.5em 1em; }
+        .flashes li { list-style-type: none; padding: 0.5em; margin-bottom: 0.5em; border: 1px solid transparent; border-radius: 4px; }
+        .flashes li.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .flashes li.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Edit Task for {{ username }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class=flashes>
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('update_task', username=username, task_id=task.id) }}">
+        <div>
+            <label for="task_description">Description:</label>
+            <input type="text" id="task_description" name="task_description" value="{{ task.description | escape }}" required>
+        </div>
+        <div>
+                <label for="editTaskDueDateInput">Due Date (Optional):</label>
+                <input type="date" id="editTaskDueDateInput" name="task_due_date"
+                       value="{{ task.due_date if task.due_date else '' }}"
+                       style="display:block; width: calc(100% - 22px); padding: 10px; margin-bottom:10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+            </div>
+            <div>
+            <button type="submit">Update Task</button>
+                <a href="{{ url_for('main_app_view', user=username) }}" style="margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+</body>
+</html>

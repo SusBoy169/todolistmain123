@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TaskStar Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_style.css') }}">
+</head>
+<body>
+    <div class="top-bar sticky">
+        <div class="app-logo">TaskStar 🌟</div>
+        <div class="top-bar-center">
+            <div id="date-display">{{ current_date_str }}</div>
+            <div id="clock-display">IST Time</div>
+        </div>
+        <div class="top-bar-right">
+            <div class="settings-link-container">
+                 <a href="{{ url_for('settings') }}" class="nav-button-style">Settings</a>
+            </div>
+            {# Toggle switch removed from here #}
+        </div>
+    </div>
+
+    <div class="home-dashboard-container">
+        {% for user_name in users %}
+        <div class="user-summary-card" id="card-{{ user_name.lower() }}">
+            <div class="card-header">
+                <div class="avatar-placeholder" id="avatar-{{ user_name.lower() }}">
+                    {{ user_name[0] }}
+                </div>
+                <div class="user-info">
+                    <h2>{{ user_name }}</h2>
+                    <p class="stars-display">⭐ {{ home_dashboard_data[user_name].stars }}</p>
+                </div>
+            </div>
+
+            <div class="quick-summary">
+                <div class="summary-bubble pending-bubble">
+                    <span class="bubble-value">{{ home_dashboard_data[user_name].pending_count }}</span>
+                    <span class="bubble-label">🕒 Pending</span>
+                </div>
+                <div class="summary-bubble today-bubble">
+                    <span class="bubble-value">{{ home_dashboard_data[user_name].completed_today }}</span>
+                    <span class="bubble-label">✅ Completed Today</span>
+                </div>
+                <div class="summary-bubble yesterday-bubble">
+                    <span class="bubble-value">{{ home_dashboard_data[user_name].completed_yesterday }}</span>
+                    <span class="bubble-label">⏮️ Done Yesterday</span>
+                </div>
+            </div>
+
+            <div class="card-actions">
+                <a href="{{ url_for('main_app_view', user=user_name) }}" class="button-style">Go to My To-Do List</a>
+                <a href="{{ url_for('main_app_view', user=user_name) }}" class="button-style-secondary">View & Edit Tasks</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align:center; margin-top: 20px; padding:10px; background-color: #eef; border-radius:5px;">
+        <p id="motivationalQuote">"The journey of a thousand miles begins with one step."</p>
+    </div>
+
+    <script>
+    // --- Clock Function ---
+    function updateClockIST() {
+        const now = new Date();
+        const utcYear = now.getUTCFullYear();
+        const utcMonth = now.getUTCMonth();
+        const utcDate = now.getUTCDate();
+        const utcHours = now.getUTCHours();
+        const utcMinutes = now.getUTCMinutes();
+        const utcSeconds = now.getUTCSeconds();
+        const utcDateTime = new Date(Date.UTC(utcYear, utcMonth, utcDate, utcHours, utcMinutes, utcSeconds));
+        utcDateTime.setHours(utcDateTime.getHours() + 5);
+        utcDateTime.setMinutes(utcDateTime.getMinutes() + 30);
+
+        const istHours = String(utcDateTime.getUTCHours()).padStart(2, '0');
+        const istMinutes = String(utcDateTime.getUTCMinutes()).padStart(2, '0');
+        const istSeconds = String(utcDateTime.getUTCSeconds()).padStart(2, '0');
+
+        const timeString =
+            String(istHours).padStart(2, '0') + ':' +
+            String(istMinutes).padStart(2, '0') + ':' +
+            String(istSeconds).padStart(2, '0') + ' IST';
+        const clockElement = document.getElementById('clock-display');
+        if (clockElement) clockElement.textContent = timeString;
+    }
+
+    // Function to apply hover/active styles to tabs (top border highlight)
+    function applyTabHoverAndActiveStyles() {
+        const tabs = document.querySelectorAll('.top-bar .tab'); // Targeting tabs in .top-bar for index.html
+        tabs.forEach(tab => {
+            const themeColor = tab.dataset.themeColor;
+            if (themeColor) {
+                if (tab.classList.contains('active-tab')) {
+                    tab.style.borderTopColor = themeColor;
+                }
+                tab.addEventListener('mouseenter', () => {
+                    if (!tab.classList.contains('active-tab')) {
+                        tab.style.borderTopColor = themeColor;
+                    }
+                });
+                tab.addEventListener('mouseleave', () => {
+                    if (!tab.classList.contains('active-tab')) {
+                        tab.style.borderTopColor = 'transparent';
+                    }
+                });
+            }
+        });
+    }
+
+    function initializePageFeatures() {
+        console.log('[Rollback] Initializing page features for index.html.');
+        updateClockIST();
+        applyTabHoverAndActiveStyles(); // Kept for tab top border highlight
+
+        // Save lastActiveTabIdentifier (href of the active tab)
+        const activeTab = document.querySelector('.top-bar .tab.active-tab'); // Target .top-bar for index
+        if (activeTab) {
+            const activeTabIdentifier = activeTab.getAttribute('href');
+            if (activeTabIdentifier) {
+                localStorage.setItem('lastActiveTabIdentifier', activeTabIdentifier);
+                console.log('[Rollback] Saved lastActiveTabIdentifier:', activeTabIdentifier);
+            }
+            // localStorage.removeItem('lastActiveTabColor'); // Removed
+        }
+        // localStorage.removeItem('themePreference'); // Removed
+    }
+
+    // Initialize features on DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Rollback] DOMContentLoaded event fired for index.html.');
+        initializePageFeatures();
+
+        if (!window.clockIntervalId_index) {
+            window.clockIntervalId_index = setInterval(updateClockIST, 1000);
+        }
+    });
+
+    // Fallback for initialization if DOM already ready
+    if (document.readyState !== 'loading' && !window.pageFeaturesInitialized_index) {
+        console.log('[Rollback] DOM already loaded, running init for index.html.');
+        initializePageFeatures();
+        if (!window.clockIntervalId_index) {
+            window.clockIntervalId_index = setInterval(updateClockIST, 1000);
+        }
+        window.pageFeaturesInitialized_index = true;
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Dashboard - TaskStar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}">
+</head>
+<body>
+    <div id="clock-date-container">
+        <div id="date">Date</div> <div id="clock">Time</div>
+    </div>
+
+    <div class="tab-bar">
+        <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'Home' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Home', tab_theme_colors.Default) }}">Home</a>
+        {% for user_iter in users %}
+            <a href="{{ url_for('user_tab', username=user_iter) }}" class="tab {% if active_tab == user_iter %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get(user_iter, tab_theme_colors.Default) }}">{{ user_iter }}</a>
+        {% endfor %}
+        <a href="{{ url_for('dashboard') }}" class="tab {% if active_tab == 'Dashboard' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Dashboard', tab_theme_colors.Default) }}">Dashboard</a>
+        <a href="{{ url_for('settings') }}" class="tab {% if active_tab == 'Settings' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Settings', tab_theme_colors.Default) }}">Settings</a>
+    </div>
+
+    <div class="content-area">
+        <h1>Weekly Dashboard</h1>
+
+        <h2>Star Leaderboard</h2>
+        {% if leaderboard_data %}
+            <ol>
+                {% for user_entry in leaderboard_data %}
+                    <li>
+                        <span>{{ loop.index }}. {{ user_entry[0] }}</span>
+                        <span> - {{ user_entry[1] }} Stars</span>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p>No star data available yet.</p>
+        {% endif %}
+
+        <h2 style="margin-top: 30px;">Task Completion Graph (This Week)</h2>
+        {% if task_completion_data %}
+            <div style="display: flex; align-items: flex-end; height: 150px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; background-color: #f7f7f7;">
+                {% for data_item in task_completion_data %}
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-right: 10px; text-align: center; flex-grow: 1; justify-content: flex-end;">
+                        <div>{{ data_item.count }}</div>
+                        <div style="width: 50px; margin-top: 5px; background-color: {{ data_item.color }}; height: {{ (data_item.count / max_graph_height) * 100 if max_graph_height > 0 else 0 }}%;" title="{{ data_item.user }} - {{ data_item.count }} tasks">
+                            {# This div is the bar #}
+                        </div>
+                        <div style="margin-top: 5px; font-size: 0.9em;">{{ data_item.user }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if max_graph_height == 0 %}
+            <p style="text-align:center; font-size:0.9em; margin-top: 5px;">No tasks completed this week to display in graph.</p>
+            {% endif %}
+        {% else %}
+            <p style="text-align:center;">Task completion data is unavailable.</p>
+        {% endif %}
+
+        <h2 style="margin-top: 30px;">Efficiency Tracker</h2>
+        <p style="text-align:center;">(Coming Soon)</p>
+
+    </div>
+
+    <script>
+    // Standard clock/date script
+    function updateClockAndDate() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}:${seconds}`;
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateString = now.toLocaleDateString(undefined, options);
+        const clockElement = document.getElementById('clock');
+        const dateElement = document.getElementById('date');
+        if (clockElement) clockElement.textContent = timeString;
+        if (dateElement) dateElement.textContent = dateString;
+    }
+
+    // Function to apply the theme (dark/light)
+    function applyTheme(theme) {
+        console.log('[Theme] Applying theme:', theme);
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            darkModeToggle.checked = (theme === 'dark');
+            console.log('[Theme] Toggle switch on settings page updated to:', darkModeToggle.checked);
+        }
+    }
+
+    // Function to handle theme changes from the toggle switch
+    function handleThemeToggle() {
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (!darkModeToggle) return;
+        darkModeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            console.log('[Theme] Toggle changed. New theme selected:', newTheme);
+            localStorage.setItem('themePreference', newTheme);
+            applyTheme(newTheme);
+            if (typeof applyPageBackgroundColor === 'function') {
+                console.log('[Theme] Re-applying page background color after toggle.');
+                applyPageBackgroundColor();
+            }
+        });
+        console.log('[Theme] Event listener attached to dark mode toggle.');
+    }
+
+    // Modified function to apply tab-specific body background (respects dark mode)
+    function applyPageBackgroundColor() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        console.log('[Theme] applyPageBackgroundColor called. Dark mode active?', isDarkMode);
+        if (isDarkMode) {
+            document.body.style.backgroundColor = '';
+            console.log('[Theme] Dark mode is ON. Body background cleared to let CSS rule apply.');
+            return;
+        }
+        const activeTab = document.querySelector('.tab.active-tab');
+        if (activeTab) {
+            const themeColor = activeTab.dataset.themeColor;
+            if (themeColor) {
+                document.body.style.backgroundColor = themeColor;
+                console.log('[Theme] Light mode. Active tab theme color applied to body:', themeColor);
+            } else {
+                document.body.style.backgroundColor = '#f4f7f6';
+                console.log('[Theme] Light mode. Active tab has no theme color. Default bg applied.');
+            }
+        } else {
+            document.body.style.backgroundColor = '#f4f7f6';
+            console.log('[Theme] Light mode. No active tab found. Default bg applied.');
+        }
+    }
+
+    // Function to apply hover/active styles to tabs
+    function applyTabHoverAndActiveStyles() {
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            const themeColor = tab.dataset.themeColor;
+            if (themeColor) {
+                if (tab.classList.contains('active-tab')) {
+                    tab.style.borderTopColor = themeColor;
+                }
+                tab.addEventListener('mouseenter', () => { if (!tab.classList.contains('active-tab')) { tab.style.borderTopColor = themeColor; } });
+                tab.addEventListener('mouseleave', () => { if (!tab.classList.contains('active-tab')) { tab.style.borderTopColor = 'transparent'; } });
+            }
+        });
+    }
+
+    // Main initialization function
+    function initializePageFeatures() {
+        console.log('[Theme] Initializing page features...');
+        const storedTheme = localStorage.getItem('themePreference');
+        console.log('[Theme] Stored theme preference on load:', storedTheme);
+        if (storedTheme) {
+            applyTheme(storedTheme);
+        } else {
+            applyTheme('light');
+        }
+        applyTabHoverAndActiveStyles();
+        applyPageBackgroundColor();
+        const activeTab = document.querySelector('.tab.active-tab');
+        if (activeTab) {
+            const activeTabIdentifier = activeTab.getAttribute('href');
+            const themeColor = activeTab.dataset.themeColor;
+            if (activeTabIdentifier) {
+                localStorage.setItem('lastActiveTabIdentifier', activeTabIdentifier);
+                console.log('[Theme] Saved lastActiveTabIdentifier:', activeTabIdentifier);
+            }
+            if (themeColor) {
+                localStorage.setItem('lastActiveTabColor', themeColor);
+                console.log('[Theme] Saved lastActiveTabColor:', themeColor);
+            }
+        }
+        handleThemeToggle();
+        if (typeof updateClockAndDate === 'function') {
+            updateClockAndDate();
+        }
+    }
+
+    // IIFE for *very first* background color application
+    (function() {
+        const lastColor = localStorage.getItem('lastActiveTabColor');
+        const themePreference = localStorage.getItem('themePreference');
+        if (themePreference === 'dark') {
+            document.body.classList.add('dark-mode');
+            console.log('[Theme IIFE] Dark mode preference found. Applied dark-mode class.');
+        } else if (lastColor) {
+            document.body.style.backgroundColor = lastColor;
+            console.log('[Theme IIFE] Light mode. Applied lastActiveTabColor:', lastColor);
+        }
+    })();
+
+    // DOMContentLoaded listener
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePageFeatures);
+    } else {
+        initializePageFeatures();
+    }
+
+    if (typeof updateClockAndDate === 'function') {
+       setInterval(updateClockAndDate, 1000);
+    }
+    </script>
+</body>
+</html>

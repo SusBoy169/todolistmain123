@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings - TaskStar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_style.css') }}">
+</head>
+<body>
+    <div id="password-protection-screen">
+        <div class="password-modal">
+            <h2>Enter Settings Password</h2>
+            <p id="password-error" class="error-message" style="display:none;"></p>
+            <input type="password" id="settingsPasswordInput" placeholder="Password">
+            <button id="submitSettingsPassword">Unlock Settings</button>
+        </div>
+    </div>
+
+    <div id="unlocked-settings-view" style="display: none;">
+        <div class="settings-top-nav">
+            <div class="app-logo-settings">TaskStar 🌟</div>
+            <div class="settings-nav-links">
+                <a href="{{ url_for('index') }}" class="button-style-link">🏠 Back to Home</a>
+                <button id="lockSettingsBtn" class="button-style-link lock-button">🔒 Lock Settings</button>
+            </div>
+            <div class="time-and-toggle">
+                <div id="clock-date-container-settings">
+                    <div id="date-settings">{{ current_date_str }}</div>
+                    <div id="clock-settings">IST Time</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-main-content">
+            <h1>TaskStar Settings</h1>
+
+            <div class="settings-section-card" id="admin-controls-section">
+                <h2>🔒 Admin Controls</h2>
+
+                <div class="setting-item">
+                    <label for="newSettingsPassword">Change Settings Password:</label>
+                    <input type="password" id="newSettingsPassword" placeholder="New Password">
+                    <input type="password" id="confirmSettingsPassword" placeholder="Confirm New Password">
+                    <button id="saveNewPasswordBtn">Save Password</button>
+                    <p id="passwordChangeStatus" class="status-message" style="display:none;"></p>
+                </div>
+
+                <div class="setting-item">
+                    <label>Task Management:</label>
+                    <button id="resetAllTasksBtn">Reset All Tasks</button>
+                    <button id="exportTaskHistoryBtn" disabled>Export Task History (CSV)</button>
+                </div>
+            </div>
+
+            <div class="settings-section-card" id="user-profile-settings-section">
+                <h2>🧑‍💻 User Profile Settings</h2>
+
+                <div class="setting-item">
+                    <label for="profileUserSelect">Select User:</label>
+                    <select id="profileUserSelect">
+                        <option value="">-- Select User --</option>
+                        {# Options will be populated by JavaScript #}
+                    </select>
+                </div>
+
+                <div id="selectedUserProfileDetails" style="margin-top: 15px; padding: 10px; border: 1px solid #eee; border-radius: 5px; display:none;">
+                    <h4>Profile for: <span id="selectedUserNameHeader"></span></h4>
+                    <p>Current Display Name: <strong id="currentDisplayName">-</strong></p>
+                    <div style="display:flex; align-items:center; margin-bottom:10px;">
+                        Current Avatar:
+                        <img id="currentAvatar" src="{{ url_for('static', filename='images/avatars/default_avatar.png') }}" alt="Avatar" style="width:50px; height:50px; border-radius:50%; margin-left:10px; border:1px solid #ccc;">
+                    </div>
+                    <div style="display:flex; align-items:center; margin-bottom:10px;">
+                        Current Accent Color:
+                        <div id="currentAccentColorDisplay" style="width:50px; height:25px; background-color:grey; margin-left:10px; border:1px solid #ccc;"></div>
+                    </div>
+                    <p>Stars: <strong id="currentUserStars">-</strong></p>
+
+                    <hr>
+                    <p><em>Customization options (star costs will apply):</em></p>
+
+                    <div class="setting-item">
+                        <label for="newDisplayNameInput">New Display Name (Cost: 10 ⭐):</label>
+                        <input type="text" id="newDisplayNameInput" placeholder="Enter new display name" disabled>
+                        <button id="saveDisplayNameBtn" disabled>Save Name</button>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Change Avatar (Cost: 50 ⭐):</label>
+                        <button id="changeAvatarBtn" disabled>Choose Avatar</button>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="newAccentColorInput">New Dashboard Card Color (Cost: 25 ⭐):</label>
+                        <input type="color" id="newAccentColorInput" value="#d3d3d3" disabled>
+                        <button id="saveAccentColorBtn" disabled>Save Color</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const flask_users_list = {{ users | tojson }};
+        const flask_all_user_details = {{ all_user_details | tojson }};
+
+    // IIFE for initial theme application (dark/light class on body)
+    (function() {
+        const themePreference = localStorage.getItem('themePreference');
+        if (themePreference === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    })();
+
+    const DEFAULT_SETTINGS_PASSWORD = "4248";
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+        // This function now also handles the toggle inside the settings content
+        const darkModeToggleContent = document.getElementById('darkModeToggle');
+        if (darkModeToggleContent) {
+            darkModeToggleContent.checked = (theme === 'dark');
+        }
+    }
+
+    function updateClockForSettings() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}:${seconds}`;
+        const clockElement = document.getElementById('clock-settings');
+        if (clockElement) clockElement.textContent = timeString;
+    }
+
+    function initializeClockForSettings() {
+         if (typeof updateClockForSettings === 'function') {
+            updateClockForSettings();
+            if (!window.clockIntervalId_settings) {
+                 window.clockIntervalId_settings = setInterval(updateClockForSettings, 1000);
+            }
+         }
+    }
+
+    function handleChangeSettingsPassword() {
+        const newPasswordInput = document.getElementById('newSettingsPassword');
+        const confirmPasswordInput = document.getElementById('confirmSettingsPassword');
+        const statusEl = document.getElementById('passwordChangeStatus');
+        if (!newPasswordInput || !confirmPasswordInput || !statusEl) return;
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+
+        if (!newPassword || !confirmPassword) {
+            statusEl.textContent = "Error: Both password fields are required.";
+            statusEl.className = 'status-message error-message';
+            statusEl.style.display = 'block'; return;
+        }
+        if (newPassword !== confirmPassword) {
+            statusEl.textContent = "Error: Passwords do not match.";
+            statusEl.className = 'status-message error-message';
+            statusEl.style.display = 'block'; return;
+        }
+        if (newPassword.length < 4) {
+            statusEl.textContent = "Error: Password must be at least 4 characters long.";
+            statusEl.className = 'status-message error-message';
+            statusEl.style.display = 'block'; return;
+        }
+        localStorage.setItem('settingsAdminPassword', newPassword);
+        statusEl.textContent = "Success: Settings password updated!";
+        statusEl.className = 'status-message success-message';
+        statusEl.style.display = 'block';
+        newPasswordInput.value = ''; confirmPasswordInput.value = '';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    }
+
+    function handleResetAllTasks() {
+        console.log("Reset All Tasks button clicked.");
+        const firstConfirmation = confirm("Are you sure you want to reset ALL tasks for ALL users? This action cannot be undone.");
+        if (firstConfirmation) {
+            const secondConfirmation = confirm("Please confirm again: This will permanently delete all tasks for Veer, Vardaan, Avni, and Drishti.");
+            if (secondConfirmation) {
+                console.log("Second confirmation for reset tasks: OK. Proceeding (simulation).");
+                const statusEl = document.getElementById('passwordChangeStatus');
+                if (statusEl) {
+                    statusEl.textContent = "Success: All tasks reset (simulation). Actual deletion will be in a future update.";
+                    statusEl.className = 'status-message success-message';
+                    statusEl.style.display = 'block';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+                }
+                alert("Simulated: All tasks have been reset.");
+            } else {
+                console.log("Task reset cancelled (second confirmation).");
+                const statusEl = document.getElementById('passwordChangeStatus');
+                if (statusEl) {
+                    statusEl.textContent = "Info: Task reset cancelled.";
+                    statusEl.className = 'status-message info-message';
+                    statusEl.style.display = 'block';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+                }
+            }
+        } else {
+            console.log("Task reset cancelled (first confirmation).");
+            const statusEl = document.getElementById('passwordChangeStatus');
+            if (statusEl) {
+                statusEl.textContent = "Info: Task reset cancelled.";
+                statusEl.className = 'status-message info-message';
+                statusEl.style.display = 'block';
+                setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+            }
+        }
+    }
+
+    function initializeUserProfileSettings() {
+        const userSelect = document.getElementById('profileUserSelect');
+        if (!userSelect || typeof flask_users_list === 'undefined' || typeof flask_all_user_details === 'undefined') {
+            console.error("User profile settings elements or initial Flask data not found.");
+            return;
+        }
+        flask_users_list.forEach(username => {
+            const option = document.createElement('option');
+            option.value = username;
+            option.textContent = username;
+            userSelect.appendChild(option);
+        });
+        userSelect.addEventListener('change', function() {
+            const selectedUsername = this.value;
+            const detailsDiv = document.getElementById('selectedUserProfileDetails');
+            if (selectedUsername) {
+                const userData = flask_all_user_details[selectedUsername];
+                const userDisplayName = localStorage.getItem(`user_${selectedUsername}_displayName`) || selectedUsername;
+                const userAvatar = localStorage.getItem(`user_${selectedUsername}_avatarUrl`) || "{{ url_for('static', filename='images/avatars/default_avatar.png') }}";
+                const userAccentColor = localStorage.getItem(`user_${selectedUsername}_accentColor`) || 'grey';
+                document.getElementById('selectedUserNameHeader').textContent = userDisplayName;
+                document.getElementById('currentDisplayName').textContent = userDisplayName;
+                document.getElementById('currentAvatar').src = userAvatar;
+                document.getElementById('currentAccentColorDisplay').style.backgroundColor = userAccentColor;
+                document.getElementById('currentUserStars').textContent = userData ? userData.stars : '-';
+                detailsDiv.style.display = 'block';
+                document.getElementById('newDisplayNameInput').value = userDisplayName;
+                document.getElementById('newAccentColorInput').value = userAccentColor;
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+        });
+        console.log("User Profile Settings initialized.");
+    }
+
+    function handleLockSettings() {
+        console.log('[LockSettings] Lock Settings button clicked.');
+        try {
+            sessionStorage.removeItem('settingsUnlocked');
+            console.log('[LockSettings] sessionStorage.settingsUnlocked flag removed.');
+        } catch (e) {
+            console.error('[LockSettings] Error removing item from sessionStorage:', e);
+            alert('Could not properly lock settings due to a storage issue. Please try clearing your browser cache or report this.');
+            return;
+        }
+        console.log('[LockSettings] Redirecting to home page...');
+        window.location.href = "{{ url_for('index') }}";
+    }
+
+    function initializeUnlockedSettingsFeatures() {
+        console.log("Initializing unlocked settings features...");
+        const currentThemeStored = localStorage.getItem('themePreference') || 'light';
+        applyTheme(currentThemeStored);
+
+        initializeClockForSettings();
+
+        const savePassBtn = document.getElementById('saveNewPasswordBtn');
+        if (savePassBtn) { savePassBtn.addEventListener('click', handleChangeSettingsPassword); }
+
+        const resetTasksBtn = document.getElementById('resetAllTasksBtn');
+        if (resetTasksBtn) { resetTasksBtn.addEventListener('click', handleResetAllTasks); }
+
+        const darkModeToggleContent = document.getElementById('darkModeToggle');
+        if (darkModeToggleContent) {
+            darkModeToggleContent.checked = (currentThemeStored === 'dark');
+            darkModeToggleContent.addEventListener('change', function() {
+                const newTheme = this.checked ? 'dark' : 'light';
+                localStorage.setItem('themePreference', newTheme);
+                applyTheme(newTheme);
+            });
+        }
+        if (typeof initializeUserProfileSettings === 'function') { initializeUserProfileSettings(); }
+
+        const lockSettingsButton = document.getElementById('lockSettingsBtn');
+        if (lockSettingsButton) {
+            lockSettingsButton.addEventListener('click', handleLockSettings);
+            console.log("[SettingsInit] Event listener attached to Lock Settings button.");
+        } else {
+            console.error("[SettingsInit] CRITICAL: Lock Settings button #lockSettingsBtn not found!");
+        }
+        console.log("[SettingsInit] Full page features initialization complete (including lock button).");
+    }
+
+    function checkSettingsPassword() {
+        const enteredPasswordInput = document.getElementById('settingsPasswordInput');
+        const enteredPassword = enteredPasswordInput.value;
+        const storedPassword = localStorage.getItem('settingsAdminPassword') || DEFAULT_SETTINGS_PASSWORD;
+        const errorEl = document.getElementById('password-error');
+
+        if (enteredPassword === storedPassword) {
+            document.getElementById('password-protection-screen').style.display = 'none';
+            document.getElementById('unlocked-settings-view').style.display = 'block';
+            sessionStorage.setItem('settingsUnlocked', 'true');
+            initializeUnlockedSettingsFeatures();
+            enteredPasswordInput.value = '';
+            if(errorEl) errorEl.style.display = 'none';
+        } else {
+            if(errorEl) {
+                errorEl.textContent = "Incorrect password. Please try again.";
+                errorEl.style.display = 'block';
+            }
+            enteredPasswordInput.value = '';
+            enteredPasswordInput.focus();
+        }
+    }
+
+    const submitPassButton = document.getElementById('submitSettingsPassword');
+    if (submitPassButton) { submitPassButton.addEventListener('click', checkSettingsPassword); }
+    const passwordInput = document.getElementById('settingsPasswordInput');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(event) {
+            if (event.key === "Enter") { checkSettingsPassword(); }
+        });
+        if (document.getElementById('password-protection-screen').style.display !== 'none') {
+             passwordInput.focus();
+        }
+    }
+    if (sessionStorage.getItem('settingsUnlocked') === 'true') {
+        document.getElementById('password-protection-screen').style.display = 'none';
+        document.getElementById('unlocked-settings-view').style.display = 'block';
+        initializeUnlockedSettingsFeatures();
+    }
+    </script>
+</body>
+</html>

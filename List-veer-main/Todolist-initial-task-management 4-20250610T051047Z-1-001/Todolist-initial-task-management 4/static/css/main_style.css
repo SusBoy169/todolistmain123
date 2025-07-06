@@ -1,0 +1,466 @@
+/* --- Base & General Styles --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif; /* Changed default font */
+    margin: 0;
+    background-color: #f4f7f6; /* Default light page background */
+    color: #333;
+    /* transition: background-color 0.5s ease; -- Removed */
+}
+
+/* Top Bar Styles (formerly New Top Bar Styles) */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #333;
+    color: #f0f0f0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #444;
+}
+
+.app-logo {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.top-bar-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.9em;
+    padding: 3px 10px;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+#date-display::before, #date-settings::before {
+    content: "📅 ";
+    margin-right: 5px;
+}
+#clock-display::before, #clock-settings::before {
+    content: "⏰ ";
+    margin-right: 5px;
+}
+
+#clock-display, #clock-settings {
+    font-weight: bold;
+}
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+}
+.settings-link-container a {
+    margin-right: 20px;
+}
+
+/* sr-only class already exists, no need to redefine */
+
+/* Toggle Switch and Slider styles REMOVED */
+
+/* Header for Task View page */
+.app-header {
+    background-color: #4a90e2;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.app-header span {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+.app-header nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.app-header nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+}
+.app-header nav a:not(.nav-button-style):hover {
+    text-decoration: underline;
+}
+
+/* --- Main App Layout: User Columns & Bubbles (Task View Page) --- */
+.user-columns-container {
+    display: flex; flex-wrap: wrap;
+    justify-content: space-around; padding: 10px; gap: 20px;
+}
+.user-column {
+    flex: 1 1 250px; min-width: 250px; max-width: 300px;
+    padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+#column-veer { background-color: #e0f7fa; }
+#column-vardaan { background-color: #e8f5e9; }
+#column-avni { background-color: #f3e5f5; }
+#column-drishti { background-color: #fff3e0; }
+.user-column h2 {
+    text-align: center; margin-top: 0; margin-bottom: 15px; color: #333;
+    font-size: 1.3em; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;
+}
+.user-column h2 span { font-size: 0.9em; font-weight: normal; }
+.bubble-section {
+    background-color: #ffffff; border-radius: 15px; padding: 15px;
+    margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.bubble-section h3 {
+    margin-top: 0; margin-bottom: 10px; font-size: 1.1em; color: #555;
+    border-bottom: 1px dashed #eee; padding-bottom: 5px;
+}
+.bubble-section ul { list-style-type: none; padding-left: 0; margin-bottom: 0; }
+.task-item { display: flex; align-items: center; padding: 10px 5px; border-bottom: 1px solid #f0f0f0; }
+.task-item:last-child { border-bottom: none; }
+.task-item input[type="checkbox"] { margin-right: 10px; min-width: 16px; min-height: 16px; cursor: pointer; }
+.task-item label { flex-grow: 1; word-break: break-word; cursor: pointer; }
+.task-item label strike { color: #777; }
+.no-tasks { color: #888; padding: 10px 5px; font-style: italic; }
+
+/* Content Area - now with solid background */
+.content-area {
+    padding: 20px;
+    background-color: #ffffff; /* Solid light background */
+    position: relative;
+    z-index: 1;
+    border-left: 1px solid rgba(0,0,0,0.1);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0 0 5px 5px;
+    margin: 0 10px;
+}
+.content-area h1 { text-align: center; color: #2c3e50; margin-top: 0; margin-bottom:20px; }
+.content-area h2 { margin-top: 30px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+.content-area p { line-height: 1.6; }
+.content-area ul, .content-area ol { padding-left: 20px; }
+.content-area hr { margin-top: 20px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee; }
+
+
+/* --- Flashed Messages (Light theme only now) --- */
+.flashes { padding-left: 20px; margin-top: 10px; margin-bottom: 15px; list-style-type: none; }
+.flashes li { padding: 10px; margin-bottom: 10px; border: 1px solid transparent; border-radius: 4px; }
+.flashes li.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+
+/* User Summary Card Layout (for index.html Home Dashboard - Light theme only now) */
+.home-dashboard-container { display: flex; flex-wrap: wrap; justify-content: space-around; padding: 20px 10px; gap: 25px; }
+.user-summary-card { flex: 1 1 280px; min-width: 280px; max-width: 320px; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.12); display: flex; flex-direction: column; transition: transform 0.2s ease-in-out; }
+.user-summary-card:hover { transform: translateY(-5px); }
+.card-header { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 15px; }
+.avatar-placeholder { width: 60px; height: 60px; border-radius: 50%; background-color: #ccc; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8em; font-weight: bold; margin-right: 15px; }
+.user-info h2 { margin: 0 0 5px 0; font-size: 1.4em; color: #333; }
+.user-info .stars-display { margin: 0; font-size: 1em; color: #555; font-weight: bold; }
+.quick-summary { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 20px; }
+.summary-bubble { flex: 1; padding: 15px 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.08); min-width: 80px; }
+.summary-bubble .bubble-value { display: block; font-size: 1.8em; font-weight: bold; margin-bottom: 5px; }
+.summary-bubble .bubble-label { font-size: 0.8em; color: #666; }
+.card-actions { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.button-style, .button-style-secondary { display: block; width: 100%; padding: 10px 15px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; border: none; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; }
+.button-style { background-color: #4a90e2; color: white; }
+.button-style:hover { background-color: #357abd; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.button-style-secondary { background-color: #e0e0e0; color: #757575; }
+.button-style-secondary:disabled { cursor: not-allowed; opacity: 0.7; }
+#card-veer { background-color: #e1f5fe; } #card-veer .avatar-placeholder { background-color: #03a9f4; } #card-veer .summary-bubble { background-color: #b3e5fc; } #card-veer .button-style { background-color: #039be5; } #card-veer .button-style:hover { background-color: #0288d1; }
+#card-vardaan { background-color: #fff3e0; } #card-vardaan .avatar-placeholder { background-color: #ff9800; } #card-vardaan .summary-bubble { background-color: #ffe0b2; } #card-vardaan .button-style { background-color: #fb8c00; } #card-vardaan .button-style:hover { background-color: #f57c00; }
+#card-avni { background-color: #fce4ec; } #card-avni .avatar-placeholder { background-color: #e91e63; } #card-avni .summary-bubble { background-color: #f8bbd0; } #card-avni .button-style { background-color: #d81b60; } #card-avni .button-style:hover { background-color: #c2185b; }
+#card-drishti { background-color: #e0f2f1; } #card-drishti .avatar-placeholder { background-color: #009688; } #card-drishti .summary-bubble { background-color: #b2dfdb; } #card-drishti .button-style { background-color: #00897b; } #card-drishti .button-style:hover { background-color: #00796b; }
+
+/* Password Protection Screen Styles (Light theme only now) */
+#password-protection-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.password-modal { background-color: #fff; padding: 30px 40px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; width: 300px; }
+.password-modal h2 { margin-top: 0; margin-bottom: 20px; color: #333; }
+.password-modal input[type="password"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+.password-modal button { width: 100%; padding: 10px; background-color: #4a90e2; color: white; border: none; border-radius: 4px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background-color 0.2s ease; }
+.password-modal button:hover { background-color: #357abd; }
+
+/* Settings Page Specific Top Navigation (Light theme only now) */
+.settings-top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; }
+.app-logo-settings { font-size: 1.3em; font-weight: bold; color: #333; }
+.settings-nav-links { display: flex; align-items: center; gap: 10px; }
+.settings-nav-links a.button-style-link { text-decoration: none; padding: 8px 15px; background-color: #6c757d; color: white; border-radius: 5px; transition: background-color 0.2s ease; }
+.settings-nav-links a.button-style-link:hover { background-color: #5a6268; }
+.time-and-toggle { display: flex; align-items: center; }
+#clock-date-container-settings {
+    font-size: 0.9em; margin-right: 20px; color: #333;
+    padding: 3px 10px; background-color: rgba(0,0,0,0.05);
+    border-radius: 5px; transition: background-color 0.3s ease;
+}
+#clock-date-container-settings:hover { background-color: rgba(0,0,0,0.1); }
+#clock-date-container-settings div { display: inline-block; margin-left: 5px; }
+
+/* Main content area for settings (Light theme only now) */
+.settings-main-content { padding: 20px; }
+.settings-main-content h1 { text-align: center; margin-bottom: 30px; color: #2c3e50; }
+.settings-section-card { background-color: #ffffff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+.settings-section-card h2 { margin-top: 0; margin-bottom: 20px; font-size: 1.2em; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.setting-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0; }
+.setting-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.setting-item label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; }
+.setting-item input[type="password"], .setting-item input[type="text"] { width: calc(100% - 22px); max-width: 300px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-right: 10px; margin-bottom: 5px; }
+.setting-item button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease; margin-top: 5px; }
+.setting-item button:hover { background-color: #0056b3; }
+
+/* Status Messages (error, success, info - Light theme only now) */
+.status-message { font-size: 0.9em; margin-top: 8px; padding: 8px; border-radius: 4px; display: block; }
+.error-message { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+.success-message { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+.info-message { color: #004085; background-color: #cce5ff; border: 1px solid #b8daff; }
+
+/* Nav Button Style for Header Links (Light theme only now) */
+.nav-button-style {
+    display: inline-block; padding: 8px 15px; background-color: #6c757d;
+    color: white; text-decoration: none; border-radius: 5px; font-weight: normal;
+    text-align: center; transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid transparent; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.nav-button-style:hover { background-color: #5a6268; color: white; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+
+/* Admin Controls in Header (Light theme only now) */
+.admin-controls-header { display: flex; align-items: center; }
+.admin-controls-header input[type="password"] { padding: 5px; border-radius: 3px; border: 1px solid #ccc; margin-right: 5px; }
+.button-style-admin-login, .button-style-admin-logout {
+    padding: 6px 10px; border: none; border-radius: 4px; color: white;
+    cursor: pointer; font-size: 0.9em; line-height: 1.5;
+}
+.button-style-admin-login { background-color: #28a745; }
+.button-style-admin-login:hover { background-color: #218838; }
+.button-style-admin-logout { background-color: #dc3545; }
+.button-style-admin-logout:hover { background-color: #c82333; }
+
+.flying-star {
+    position: fixed; font-size: 24px; color: #f39c12;
+    z-index: 10000; pointer-events: none;
+    transition: top 0.5s ease-in-out, left 0.5s ease-in-out, opacity 0.3s ease-in-out 0.3s, transform 0.5s ease-in-out;
+}
+
+.add-task-area {
+    margin-bottom: 15px;
+    text-align: center;
+}
+.button-style-add-task {
+    padding: 8px 15px;
+    background-color: #28a745; /* Green */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.button-style-add-task:hover {
+    background-color: #218838;
+}
+
+/* Styles for Lock Button in Settings Nav */
+button.button-style-link {
+    text-decoration: none;
+    padding: 8px 15px;
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+}
+.settings-nav-links .button-style-link.lock-button {
+    background-color: #dc3545;
+}
+.settings-nav-links .button-style-link.lock-button:hover {
+    background-color: #c82333;
+}
+
+/* Insights Page Styles */
+.insights-header, .insights-header h1, .insights-header a, #clock-date-container-insights div {
+    font-family: 'Poppins', sans-serif;
+}
+.insights-page-container { padding: 0; }
+.insights-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 25px; background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0; position: sticky;
+    top: 0; z-index: 999; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.insights-header h1 { margin: 0; font-size: 1.7em; color: #2c3e50; font-weight: 600; }
+.insights-header a.button-style-link {
+    text-decoration: none; padding: 10px 20px; background-color: #6c757d;
+    color: white; border-radius: 25px; font-size: 0.9em; font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.insights-header a.button-style-link:hover {
+    background-color: #5a6268; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#clock-date-container-insights {
+    font-size: 0.95em; padding: 10px 18px; background-color: #f0f0f0;
+    border-radius: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease; text-align: right;
+}
+#clock-date-container-insights:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.18); }
+#clock-date-container-insights div { display: inline-block; margin-left: 6px; color: #333; }
+#date-insights::before { content: "📅 "; margin-right: 4px; }
+#clock-insights { font-weight: 600; }
+#clock-insights::before { content: "🕒 "; margin-right: 4px; }
+
+.user-analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 20px; }
+.user-analytics-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.user-analytics-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+}
+
+.card-user-overview {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.insight-avatar-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    font-weight: bold;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.user-details {
+    flex-grow: 1;
+}
+.user-details h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #333;
+}
+.user-details .stars {
+    margin: 0 0 3px 0;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #f39c12;
+}
+.user-details .efficiency {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 500;
+    color: #27ae60;
+}
+
+.user-analytics-card .quote {
+    font-size: 0.9em;
+    font-style: italic;
+    color: #777;
+    margin-bottom: 15px;
+    text-align: center;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 15px;
+}
+
+/* User-specific themes for cards and avatars */
+#insight-card-veer { background-color: #e9f5fe; border-left: 5px solid #03a9f4; }
+#avatar-insights-veer { background-color: #03a9f4; }
+#insight-card-vardaan { background-color: #fff8e1; border-left: 5px solid #ff9800; }
+#avatar-insights-vardaan { background-color: #ff9800; }
+#insight-card-avni { background-color: #fde4f2; border-left: 5px solid #e91e63; }
+#avatar-insights-avni { background-color: #e91e63; }
+#insight-card-drishti { background-color: #e0f7f3; border-left: 5px solid #009688; }
+#avatar-insights-drishti { background-color: #009688; }
+
+.card-section-placeholder {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.leaderboards-and-motivation {
+    padding: 20px;
+    margin-top: 20px;
+    background-color: #f0f8ff;
+    border-radius: 8px;
+}
+
+/* Dark Mode adjustments for User Overview section */
+body.dark-mode .user-analytics-card {
+    background-color: #2c323a;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+body.dark-mode .card-user-overview {
+    border-bottom-color: #3a3f47;
+}
+body.dark-mode .user-details h3 { color: #e8eaed; }
+body.dark-mode .user-details .stars { color: #f5b041; }
+body.dark-mode .user-details .efficiency { color: #2ecc71; }
+body.dark-mode .user-analytics-card .quote {
+    color: #b0b3b8;
+    border-top-color: #3a3f47;
+}
+body.dark-mode #insight-card-veer { background-color: #223a44; border-left-color: #29b6f6; }
+body.dark-mode #avatar-insights-veer { background-color: #29b6f6; }
+body.dark-mode #insight-card-vardaan { background-color: #383022; border-left-color: #ffa726; }
+body.dark-mode #avatar-insights-vardaan { background-color: #ffa726; }
+body.dark-mode #insight-card-avni { background-color: #382230; border-left-color: #f06292; }
+body.dark-mode #avatar-insights-avni { background-color: #f06292; }
+body.dark-mode #insight-card-drishti { background-color: #223835; border-left-color: #26a69a; }
+body.dark-mode #avatar-insights-drishti { background-color: #26a69a; }
+
+body.dark-mode .card-section-placeholder {
+    color: #777;
+}
+
+/* Dark Mode adjustments for Insights Header refinement */
+body.dark-mode .insights-header {
+    background-color: #282c34;
+    border-bottom-color: #3a3f47;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+body.dark-mode .insights-header h1 {
+    color: #e6e6e6;
+}
+body.dark-mode .insights-header a.button-style-link {
+    background-color: #495057;
+    color: #e8eaed;
+}
+body.dark-mode .insights-header a.button-style-link:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+body.dark-mode #clock-date-container-insights {
+    background-color: #3a3f47;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+body.dark-mode #clock-date-container-insights:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+body.dark-mode #clock-date-container-insights div {
+    color: #bdc1c6;
+}
+body.dark-mode #clock-date-container-insights #clock-insights {
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+[end of static/css/main_style.css]

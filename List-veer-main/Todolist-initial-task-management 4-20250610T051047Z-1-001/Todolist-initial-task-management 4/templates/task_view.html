@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if display_user %}{{ display_user }}'s Tasks{% else %}All Tasks{% endif %} - TaskStar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_style.css') }}">
+</head>
+<body>
+    {# Removed old #clock-date-container div from here #}
+
+    <div class="app-header">
+        <span>TaskStar</span>
+        <nav>
+            <a href="{{ url_for('index') }}" class="nav-button-style">Dashboard</a>
+            <a href="{{ url_for('settings') }}" class="nav-button-style">Settings</a>
+        </nav>
+        <div class="admin-controls-header">
+            {% if admin_mode %}
+                <form method="POST" action="{{ url_for('admin_logout_global') }}" style="display: inline;">
+                    <button type="submit" class="button-style-admin-logout">Exit Admin Mode</button>
+                </form>
+            {% else %}
+                <form method="POST" action="{{ url_for('admin_login_global') }}" style="display: flex; align-items: center; gap: 5px;">
+                    <label for="admin_password_global" class="sr-only">Admin Password</label>
+                    <input type="password" id="admin_password_global" name="admin_password" placeholder="Admin Pass" required style="padding: 5px;">
+                    <button type="submit" class="button-style-admin-login">Enter Admin</button>
+                </form>
+            {% endif %}
+        </div>
+        {# Dark mode toggle removed from here #}
+    </div>
+
+    <div class="user-columns-container">
+        {% set users_to_render = [display_user] if display_user else users %}
+        {% for user_name in users_to_render %}
+        <div class="user-column" id="column-{{ user_name.lower() }}">
+            <h2>{{ user_name }}
+                <span id="stars-{{ user_name.lower() }}">
+                    (⭐ {{ all_users_data[user_name].stars }})
+                </span>
+            </h2>
+            {% if admin_mode and display_user == user_name %}
+            <div class="add-task-area">
+                <button class="button-style-add-task" onclick="openAddTaskModal('{{ user_name }}')">➕ Add Task</button>
+            </div>
+            {% endif %}
+
+            <div class="bubble-section pending-tasks">
+                <h3>Pending</h3>
+                <ul id="pending-{{ user_name.lower() }}">
+                    {% for task in all_users_data[user_name].tasks if task.status == 'pending' %}
+                        <li class="task-item">
+                            <input type="checkbox"
+                                   id="task-{{ task.id }}-{{ user_name.lower() }}"
+                                   name="task-{{ task.id }}"
+                                   value="{{ task.id }}"
+                                   onchange="completeTask('{{ user_name }}', '{{ task.id }}')">
+                            <label for="task-{{ task.id }}-{{ user_name.lower() }}">{{ task.description | escape }}</label>
+                                    {% if admin_mode %}
+                                    <span class="task-actions">
+                                        <a href="{{ url_for('edit_task_form', username=user_name, task_id=task.id) }}" style="font-size:0.8em; margin-left:5px;">Edit</a>
+                                        <form method="POST" action="{{ url_for('delete_task', username=user_name, task_id=task.id) }}" style="display: inline;">
+                                            <button type="submit" onclick="return confirm('Delete task: \'{{ task.description | escape }}\'?');" class="button-delete-task" style="font-size:0.8em; color:red; background:none; border:none; padding:0; margin-left:5px; cursor:pointer;">Del</button>
+                                        </form>
+                                    </span>
+                                    {% endif %}
+                        </li>
+                    {% else %}
+                        <li class="no-tasks">No pending tasks.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="bubble-section completed-tasks">
+                <h3>Completed</h3>
+                <ul id="completed-{{ user_name.lower() }}">
+                    {% for task in all_users_data[user_name].tasks if task.status == 'completed' %}
+                        <li class="task-item">
+                            <input type="checkbox"
+                                   id="task-{{ task.id }}-{{ user_name.lower() }}"
+                                   name="task-{{ task.id }}"
+                                   value="{{ task.id }}"
+                                   checked disabled>
+                            <label for="task-{{ task.id }}-{{ user_name.lower() }}"><strike>{{ task.description | escape }}</strike></label>
+                                    {% if admin_mode %}
+                                    <span class="task-actions">
+                                        <a href="{{ url_for('edit_task_form', username=user_name, task_id=task.id) }}" style="font-size:0.8em; margin-left:5px;">Edit</a>
+                                        <form method="POST" action="{{ url_for('delete_task', username=user_name, task_id=task.id) }}" style="display: inline;">
+                                            <button type="submit" onclick="return confirm('Delete task: \'{{ task.description | escape }}\'?');" class="button-delete-task" style="font-size:0.8em; color:red; background:none; border:none; padding:0; margin-left:5px; cursor:pointer;">Del</button>
+                                        </form>
+                                    </span>
+                                    {% endif %}
+                        </li>
+                    {% else %}
+                        <li class="no-tasks">No completed tasks.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="bubble-section yesterday-tasks">
+                <h3>Done Yesterday</h3>
+                <ul id="yesterday-{{ user_name.lower() }}">
+                    {% for task in all_users_data[user_name].tasks if task.status == 'done_yesterday' %}
+                        <li class="task-item">
+                            <input type="checkbox"
+                                   id="task-{{ task.id }}-{{ user_name.lower() }}"
+                                   name="task-{{ task.id }}"
+                                   value="{{ task.id }}"
+                                   checked disabled>
+                            <label for="task-{{ task.id }}-{{ user_name.lower() }}"><strike>{{ task.description | escape }}</strike></label>
+                                    {% if admin_mode %}
+                                    <span class="task-actions">
+                                        <a href="{{ url_for('edit_task_form', username=user_name, task_id=task.id) }}" style="font-size:0.8em; margin-left:5px;">Edit</a>
+                                        <form method="POST" action="{{ url_for('delete_task', username=user_name, task_id=task.id) }}" style="display: inline;">
+                                            <button type="submit" onclick="return confirm('Delete task: \'{{ task.description | escape }}\'?');" class="button-delete-task" style="font-size:0.8em; color:red; background:none; border:none; padding:0; margin-left:5px; cursor:pointer;">Del</button>
+                                        </form>
+                                    </span>
+                                    {% endif %}
+                        </li>
+                    {% else %}
+                        <li class="no-tasks">No tasks from yesterday.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="addTaskModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3 id="addTaskModalTitle">Add New Task</h3>
+            <input type="text" id="newTaskDescriptionInput" placeholder="Task description...">
+            <label for="newTaskDueDateInput" style="display:block; margin-top:10px; margin-bottom:5px;">Due Date (Optional):</label>
+            <input type="date" id="newTaskDueDateInput" style="display:block; width: calc(100% - 22px); padding: 10px; margin-bottom:10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+            <p id="addTaskError" class="error-message" style="display:none;"></p>
+            <div class="modal-actions">
+                <button id="submitNewTaskBtn" class="button-style">Add Task</button>
+                <button id="cancelAddTaskBtn" class="button-style-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Task completion logic with flying star animation
+    function completeTask(username, taskId) {
+        const checkbox = document.getElementById(`task-${taskId}-${username.toLowerCase()}`);
+        const starCounter = document.getElementById(`stars-${username.toLowerCase()}`);
+
+        fetch(`/complete_task/${username}/${taskId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (checkbox && starCounter) {
+                    const star = document.createElement('span');
+                    star.textContent = '⭐';
+                    star.className = 'flying-star';
+                    document.body.appendChild(star);
+                    const startRect = checkbox.getBoundingClientRect();
+                    const endRect = starCounter.getBoundingClientRect();
+                    star.style.left = (startRect.left + startRect.width / 2 - 12) + 'px';
+                    star.style.top = (startRect.top + startRect.height / 2 - 12) + 'px';
+                    star.style.opacity = '1';
+                    star.style.transform = 'scale(1)';
+                    star.getBoundingClientRect();
+                    star.style.left = (endRect.left + endRect.width / 2 - 12) + 'px';
+                    star.style.top = (endRect.top + endRect.height / 2 - 12) + 'px';
+                    star.style.opacity = '0';
+                    star.style.transform = 'scale(0.3)';
+                    star.addEventListener('transitionend', () => {
+                        star.remove();
+                        window.location.reload();
+                    });
+                    setTimeout(() => { if (star.parentElement) { star.remove(); window.location.reload(); } }, 700);
+                } else { window.location.reload(); }
+            } else { alert('Error completing task: ' + data.message); }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while completing the task.');
+        });
+    }
+
+    let currentAddTaskUsername = null;
+
+    function openAddTaskModal(username) {
+        currentAddTaskUsername = username;
+        document.getElementById('addTaskModalTitle').textContent = `Add New Task for ${username}`;
+        document.getElementById('newTaskDescriptionInput').value = '';
+        document.getElementById('addTaskError').style.display = 'none';
+        document.getElementById('addTaskModal').style.display = 'flex';
+        document.getElementById('newTaskDescriptionInput').focus();
+    }
+
+    function closeAddTaskModal() {
+        document.getElementById('addTaskModal').style.display = 'none';
+        currentAddTaskUsername = null;
+    }
+
+    function handleAddNewTask() {
+        const taskDescriptionInput = document.getElementById('newTaskDescriptionInput');
+        const taskDescription = taskDescriptionInput.value.trim();
+        const errorEl = document.getElementById('addTaskError');
+
+        if (!currentAddTaskUsername) {
+            errorEl.textContent = "Error: User context lost. Please close and retry.";
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (!taskDescription) {
+            errorEl.textContent = "Task description cannot be empty.";
+            errorEl.style.display = 'block';
+            taskDescriptionInput.focus();
+            return;
+        }
+        errorEl.style.display = 'none';
+
+        const dueDateValue = document.getElementById('newTaskDueDateInput').value;
+        const formData = new URLSearchParams();
+        formData.append('task_description', taskDescription);
+        if (dueDateValue) {
+            formData.append('task_due_date', dueDateValue);
+        }
+
+        fetch(`/add_task/${currentAddTaskUsername}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        })
+        .then(response => {
+            if (response.ok || response.redirected) {
+                closeAddTaskModal();
+                window.location.reload();
+            } else {
+                response.json().then(data => {
+                    errorEl.textContent = "Error adding task: " + (data.message || "Unknown server error");
+                    errorEl.style.display = 'block';
+                }).catch(() => {
+                    errorEl.textContent = "Error adding task. Server might be unreachable or returned non-JSON error.";
+                    errorEl.style.display = 'block';
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error adding task via fetch:', error);
+            errorEl.textContent = "An error occurred while trying to add the task.";
+            errorEl.style.display = 'block';
+        });
+    }
+
+    function updateClockAndDate() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}:${seconds}`;
+        const clockElement = document.getElementById('app-clock-display'); // Example ID if clock added to .app-header
+        if (clockElement) clockElement.textContent = timeString;
+    }
+
+    function initializePageFeatures() {
+        console.log('[Rollback] Initializing page features for task_view.html.');
+        updateClockAndDate();
+        // applyTabHoverAndActiveStyles(); // Kept for potential future use with .app-header .nav-button-style
+
+        const submitBtn = document.getElementById('submitNewTaskBtn');
+        if (submitBtn) submitBtn.addEventListener('click', handleAddNewTask);
+
+        const cancelBtn = document.getElementById('cancelAddTaskBtn');
+        if (cancelBtn) cancelBtn.addEventListener('click', closeAddTaskModal);
+
+        const taskDescInput = document.getElementById('newTaskDescriptionInput');
+        if(taskDescInput) taskDescInput.addEventListener('keypress', function(e) { if(e.key === 'Enter') handleAddNewTask(); });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Rollback] DOMContentLoaded event fired for task_view.html.');
+        initializePageFeatures();
+        if (!window.clockIntervalId_taskView) {
+            window.clockIntervalId_taskView = setInterval(updateClockAndDate, 1000);
+        }
+    });
+
+    if (document.readyState !== 'loading' && !window.pageFeaturesInitialized_taskView) {
+        console.log('[Rollback] DOM already loaded, running init for task_view.html.');
+        initializePageFeatures();
+        if (!window.clockIntervalId_taskView) {
+            window.clockIntervalId_taskView = setInterval(updateClockAndDate, 1000);
+        }
+        window.pageFeaturesInitialized_taskView = true;
+    }
+    </script>
+</body>
+</html>

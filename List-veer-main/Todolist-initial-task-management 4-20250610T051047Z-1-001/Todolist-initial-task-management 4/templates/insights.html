@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>📊 TaskStar Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_style.css') }}">
+    {# <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"> #}
+    {# <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"> #}
+    {# Font import will be in CSS file for better practice #}
+</head>
+<body>
+    <div class="insights-page-container">
+        <header class="insights-header">
+            <a href="{{ url_for('index') }}" class="button-style-link">← Back to Dashboard</a>
+            <h1>📊 TaskStar Insights</h1>
+            <div id="clock-date-container-insights"> {# Distinct ID for styling if needed #}
+                <div id="date-insights">{{ current_date_str }}</div>
+                <div id="clock-insights">IST Time</div>
+            </div>
+        </header>
+
+        <main class="insights-main-content">
+            <section class="user-analytics-grid">
+                {% for user_name in users_list_for_order %}
+                    <div class="user-analytics-card" id="insight-card-{{ user_name.lower() }}">
+                        <div class="card-user-overview">
+                            <div class="insight-avatar-placeholder" id="avatar-insights-{{ user_name.lower() }}">
+                                {{ insights_data[user_name].avatar_placeholder }}
+                            </div>
+                            <div class="user-details">
+                                <h3>{{ user_name }}</h3>
+                                <p class="stars">⭐ {{ insights_data[user_name].stars }} Stars</p>
+                                <p class="efficiency">⚡ {{ insights_data[user_name].efficiency }}%</p>
+                            </div>
+                        </div>
+                        <p class="quote"><em>"Keep up the great work, {{ user_name }}!"</em></p>
+
+                        <div class="task-breakdown-bubbles">
+                            <div class="stat-bubble pending-bubble-stat" id="pending-bubble-{{ user_name.lower() }}">
+                                <span class="stat-emoji">🕒</span>
+                                <span class="stat-value">{{ insights_data[user_name].pending_count }}</span>
+                                <span class="stat-label">Pending</span>
+                            </div>
+                            <div class="stat-bubble completed-today-bubble-stat" id="completed-today-bubble-{{ user_name.lower() }}">
+                                <span class="stat-emoji">✅</span>
+                                <span class="stat-value">{{ insights_data[user_name].completed_today }}</span>
+                                <span class="stat-label">Today</span>
+                            </div>
+                            <div class="stat-bubble done-yesterday-bubble-stat" id="done-yesterday-bubble-{{ user_name.lower() }}">
+                                <span class="stat-emoji">⏮️</span>
+                                <span class="stat-value">{{ insights_data[user_name].completed_yesterday }}</span>
+                                <span class="stat-label">Yesterday</span>
+                            </div>
+                        </div>
+
+                        <div class="weekly-activity-graph-container">
+                            <h4>Tasks This Week</h4>
+                            <div class="graph-legend">
+                                <span class="legend-item"><span class="legend-color completed-bar-legend"></span>Completed</span>
+                                <span class="legend-item"><span class="legend-color pending-bar-legend"></span>Pending</span>
+                            </div>
+                            <div class="graph-bars-area">
+                                {% set user_daily_data = insights_data[user_name].daily_activity %}
+                                {% set max_val = insights_data[user_name].max_bar_height_value %}
+                                {% for day_data in user_daily_data %}
+                                <div class="graph-day-column">
+                                    <div class="bars">
+                                        <div class="bar completed-bar"
+                                             style="height: {{ (day_data.completed / max_val) * 100 if max_val > 0 else 0 }}%;"
+                                             title="Completed: {{ day_data.completed }}">
+                                        </div>
+                                        <div class="bar pending-bar"
+                                             style="height: {{ (day_data.pending / max_val) * 100 if max_val > 0 else 0 }}%;"
+                                             title="Pending: {{ day_data.pending }}">
+                                        </div>
+                                    </div>
+                                    <div class="day-label">{{ day_data.day }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <p>No user data to display insights.</p>
+                {% endfor %}
+            </section>
+
+            <section class="leaderboards-and-motivation">
+                <p>(Leaderboards and Motivational Quote will go here later)</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    // Basic Clock JS (adapt from other pages, ensure it targets #clock-insights)
+    // Full IST clock from previous work needed here.
+    function updateClockISTInsights() {
+        const now = new Date();
+        const utcHours = now.getUTCHours();
+        const utcMinutes = now.getUTCMinutes();
+        const utcSeconds = now.getUTCSeconds();
+        let istHours = utcHours + 5;
+        let istMinutes = utcMinutes + 30;
+
+        if (istMinutes >= 60) {
+            istHours += Math.floor(istMinutes / 60);
+            istMinutes %= 60;
+        }
+        istHours %= 24;
+
+        const timeString =
+            String(istHours).padStart(2, '0') + ':' +
+            String(istMinutes).padStart(2, '0') + ':' +
+            String(utcSeconds).padStart(2, '0') + ' IST';
+
+        const clockElement = document.getElementById('clock-insights');
+        if (clockElement) clockElement.textContent = timeString;
+        // Date is server-rendered by current_date_str
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateClockISTInsights);
+    } else {
+        updateClockISTInsights();
+    }
+    setInterval(updateClockISTInsights, 1000);
+    </script>
+</body>
+</html>
