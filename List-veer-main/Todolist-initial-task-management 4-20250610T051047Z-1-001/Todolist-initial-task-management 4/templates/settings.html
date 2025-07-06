@@ -61,16 +61,7 @@
                 </div>
             </div>
 
-            {# Display flashed messages here as well, specific to settings page actions #}
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="flashes-container" style="margin: 15px auto; padding: 10px; border-radius: 5px; text-align:center; max-width: 500px;">
-                    {% for category, message in messages %}
-                        <p class="{{ category }}" style="color: {% if category == 'error' %}#D8000C{% elif category == 'success' %}#4F8A10{% else %}#00529B{% endif %}; background-color: {% if category == 'error' %}#FFD2D2{% elif category == 'success' %}#DFF2BF{% else %}#BDE5F8{% endif %}; padding: 8px; border-radius: 3px; margin-bottom: 5px;">{{ message }}</p>
-                    {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+            {# Flashed messages block removed #}
 
             <div class="settings-section-card" id="user-profile-settings-section">
                 <h2>🧑‍💻 User Profile Settings</h2>

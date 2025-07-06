@@ -21,16 +21,7 @@
         </div>
     </div>
 
-    {# Display flashed messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul class=flashes style="list-style-type: none; padding: 10px; margin: 10px; border-radius: 5px; text-align:center;">
-            {% for category, message in messages %}
-                <li class="{{ category }}" style="color: {% if category == 'error' %}red{% elif category == 'success' %}green{% else %}black{% endif %};">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
+    {# Flashed messages block removed #}
 
     <div class="home-dashboard-container">
         {% for user_name in users %}
