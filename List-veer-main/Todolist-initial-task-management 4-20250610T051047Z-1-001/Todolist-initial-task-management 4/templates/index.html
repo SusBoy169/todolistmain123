@@ -13,12 +13,29 @@
             <div id="clock-display">IST Time</div>
         </div>
         <div class="top-bar-right">
+            {% if admin_mode %}
+            <form method="POST" action="{{ url_for('add_user_admin') }}" style="display: flex; align-items: center; gap: 5px; margin-right: 15px;">
+                <input type="text" name="new_username" placeholder="New User Name" required style="padding: 5px; border-radius: 3px; border: 1px solid #ccc;">
+                <button type="submit" class="nav-button-style" style="padding: 5px 10px;">Add User</button>
+            </form>
+            {% endif %}
             <div class="settings-link-container">
                  <a href="{{ url_for('settings') }}" class="nav-button-style">Settings</a>
             </div>
             {# Toggle switch removed from here #}
         </div>
     </div>
+
+    {# Display flashed messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class=flashes style="list-style-type: none; padding: 10px; margin: 10px; border-radius: 5px; text-align:center;">
+            {% for category, message in messages %}
+                <li class="{{ category }}" style="color: {% if category == 'error' %}red{% elif category == 'success' %}green{% else %}black{% endif %};">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
 
     <div class="home-dashboard-container">
         {% for user_name in users %}

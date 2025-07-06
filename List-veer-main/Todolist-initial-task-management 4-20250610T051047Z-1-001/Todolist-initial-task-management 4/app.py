@@ -21,6 +21,9 @@ TAB_THEME_COLORS = {
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
+# Global variable to track the last run date of the daily update
+LAST_DAILY_UPDATE_RUN_DATE = None
+
 # --- Helper Functions ---
 def get_user_tasks(username):
     task_file = os.path.join(DATA_DIR, f"{username.lower()}_tasks.json")
@@ -137,6 +140,34 @@ def get_tasks_completed_this_week_ist(user_tasks, start_of_week_ist, today_ist):
                 continue
     return count
 
+@app.before_request
+def run_daily_updates_if_needed():
+    global LAST_DAILY_UPDATE_RUN_DATE
+    # It's important to use a consistent timezone for checking the date.
+    # Since update_tasks_done_yesterday_logic uses UTC for its primary date logic,
+    # we should probably use UTC date here for consistency of "day".
+    # Or, use IST date if we want the trigger to be based on IST midnight.
+    # Let's use IST date for the trigger, as the app is IST-centric for users.
+    today_ist_date = datetime.now(IST).date()
+
+    if LAST_DAILY_UPDATE_RUN_DATE != today_ist_date:
+        print(f"Running daily 'done_yesterday' update. Previous run: {LAST_DAILY_UPDATE_RUN_DATE}, Today (IST): {today_ist_date}")
+        try:
+            tasks_updated_count = update_tasks_done_yesterday_logic()
+            LAST_DAILY_UPDATE_RUN_DATE = today_ist_date
+            print(f"Daily update complete. {tasks_updated_count} tasks moved to 'done_yesterday'. Last run date set to: {LAST_DAILY_UPDATE_RUN_DATE}")
+        except Exception as e:
+            print(f"Error during automatic daily update: {e}")
+            # Optionally, you could prevent setting LAST_DAILY_UPDATE_RUN_DATE if it fails,
+            # so it tries again on the next request. For now, we'll set it to avoid constant retries on errors.
+            # However, for robustness, error handling here could be more sophisticated.
+            # If the error is critical, maybe don't update the date to retry.
+            # If it's a minor task-specific error, updating the date might be okay.
+            # The current update_tasks_done_yesterday_logic has some internal error handling (prints warnings).
+            LAST_DAILY_UPDATE_RUN_DATE = today_ist_date # Still update to prevent spamming logs if one task is problematic
+            print(f"Daily update attempted, but an error occurred. Last run date set to: {LAST_DAILY_UPDATE_RUN_DATE} to prevent immediate retry.")
+
+
 # --- Routes ---
 @app.route('/')
 def index():
@@ -170,7 +201,8 @@ def index():
                            users=users,
                            active_tab="Home",
                            tab_theme_colors=TAB_THEME_COLORS,
-                           current_date_str=today_ist.strftime('%A, %B %d, %Y'))
+                           current_date_str=today_ist.strftime('%A, %B %d, %Y'),
+                           admin_mode=session.get('is_admin_mode', False))
 
 @app.route('/task_view')
 def main_app_view():
@@ -218,6 +250,55 @@ def admin_logout_global():
     session.pop('is_admin_mode', None)
     flash('Admin mode deactivated.', 'info')
     return redirect(request.referrer or url_for('main_app_view'))
+
+@app.route('/add_user_admin', methods=['POST'])
+def add_user_admin():
+    if not session.get('is_admin_mode', False):
+        flash('Admin access required to add users.', 'error')
+        return redirect(url_for('index'))
+
+    new_username = request.form.get('new_username', '').strip()
+
+    if not new_username:
+        flash('Username cannot be empty.', 'error')
+        return redirect(url_for('index'))
+
+    # Basic validation for username (e.g., no special characters, length)
+    if not new_username.isalnum() or len(new_username) < 3 or len(new_username) > 20:
+        flash('Username must be 3-20 alphanumeric characters.', 'error')
+        return redirect(url_for('index'))
+
+    # Capitalize the first letter, ensure rest are lowercase for consistency (optional, but good for display)
+    new_username_formatted = new_username.capitalize()
+
+
+    if new_username_formatted in users:
+        flash(f"User '{new_username_formatted}' already exists.", 'error')
+        return redirect(url_for('index'))
+
+    # Update the global users list
+    users.append(new_username_formatted)
+
+    # Update users.json
+    all_user_data = get_all_user_data() # Ensures we have the latest data
+    if new_username_formatted not in all_user_data:
+        all_user_data[new_username_formatted] = {"stars": 0, "star_history": []}
+        save_all_user_data(all_user_data)
+
+    # Create user-specific task file
+    new_user_task_file = os.path.join(DATA_DIR, f"{new_username_formatted.lower()}_tasks.json")
+    if not os.path.exists(new_user_task_file):
+        with open(new_user_task_file, 'w') as f:
+            json.dump([], f)
+
+    # Also update TAB_THEME_COLORS if we want new users to have a default color on tabs
+    # For now, they will use the 'Default' color. This could be enhanced later.
+    # Example: TAB_THEME_COLORS[new_username_formatted] = TAB_THEME_COLORS['Default']
+
+
+    flash(f"User '{new_username_formatted}' added successfully.", 'success')
+    return redirect(url_for('index'))
+
 
 @app.route('/add_task/<username>', methods=['POST'])
 def add_task(username):
@@ -424,7 +505,8 @@ def dashboard():
     return render_template("dashboard.html",
                            leaderboard_data=leaderboard_data,
                            task_completion_data=task_completion_data_list,
-                           max_graph_height=max(1, overall_max_completed_count), # Use corrected max
+                           max_graph_height=max(1, overall_max_completed_count),
+                           overall_max_completed_count_for_display=overall_max_completed_count, # Pass the raw count for conditional display
                            users=users,
                            active_tab="Dashboard",
                            tab_theme_colors=TAB_THEME_COLORS)
@@ -441,6 +523,74 @@ def settings():
                            active_tab="Settings",
                            tab_theme_colors=TAB_THEME_COLORS,
                            current_date_str=current_date_str)
+
+STAR_COSTS = {
+    "displayName": 10,
+    "avatar": 50,        # Assuming this is for setting a new avatar URL or choosing a pre-set one
+    "accentColor": 25
+}
+
+@app.route('/settings/purchase/<username>', methods=['POST'])
+def handle_purchase(username):
+    if username not in users:
+        return jsonify({"success": False, "message": "User not found."}), 404
+
+    data = request.get_json()
+    item_type = data.get('item_type')
+    value = data.get('value') # New display name, new color hex, new avatar URL etc.
+
+    if not item_type or item_type not in STAR_COSTS:
+        return jsonify({"success": False, "message": "Invalid item type."}), 400
+
+    cost = STAR_COSTS[item_type]
+    all_user_data = get_all_user_data()
+    user_current_data = all_user_data.get(username)
+
+    if not user_current_data:
+        return jsonify({"success": False, "message": "User data couldn't be loaded."}), 500
+
+    current_stars = user_current_data.get("stars", 0)
+
+    if current_stars < cost:
+        return jsonify({
+            "success": False,
+            "message": f"Not enough stars. You need {cost}, but have {current_stars}.",
+            "currentStars": current_stars
+        }), 400 # Bad request (client error)
+
+    # Deduct stars and record history
+    user_current_data["stars"] -= cost
+    purchase_reason = f"Changed {item_type}"
+    if item_type == "displayName":
+        purchase_reason = f"Changed display name to '{value}'"
+    elif item_type == "accentColor":
+        purchase_reason = f"Changed accent color to '{value}'"
+    elif item_type == "avatar":
+        purchase_reason = "Changed avatar" # Value might be a URL, too long for a short reason
+
+    user_current_data.setdefault("star_history", []).append({
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "reason": purchase_reason,
+        "amount": -cost,
+        "remaining_stars": user_current_data["stars"]
+    })
+
+    # Note: Actual application of display name, avatar URL, accent color
+    # is handled client-side via localStorage in the current setup.
+    # If these needed to be persisted server-side beyond star deduction,
+    # you would update all_user_data[username] with these values here.
+    # e.g., all_user_data[username]['display_name_override'] = value
+
+    save_all_user_data(all_user_data)
+
+    return jsonify({
+        "success": True,
+        "message": f"{item_type.replace('_', ' ')} updated successfully! {cost} stars deducted.",
+        "newStars": user_current_data["stars"],
+        "itemType": item_type,
+        "value": value
+    })
+
 
 @app.route('/insights')
 def insights_page():

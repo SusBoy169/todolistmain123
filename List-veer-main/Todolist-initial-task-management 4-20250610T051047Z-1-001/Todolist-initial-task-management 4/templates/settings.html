@@ -103,6 +103,29 @@
         const flask_users_list = {{ users | tojson }};
         const flask_all_user_details = {{ all_user_details | tojson }};
 
+        const STAR_COSTS = {
+            displayName: 10,
+            avatar: 50,
+            accentColor: 25
+        };
+
+        let currentSelectedUserForSettings = null;
+
+    // --- Utility for Popups ---
+    function showSettingsPopup(message, type = 'info') {
+        // Simple alert for now, can be replaced with a styled modal/toast later
+        alert(`[${type.toUpperCase()}] ${message}`);
+        // Example of a more styled approach (if a popup element exists):
+        // const popup = document.getElementById('settingsPopup');
+        // if (popup) {
+        //     popup.textContent = message;
+        //     popup.className = `popup ${type}`; // 'popup info', 'popup success', 'popup error'
+        //     popup.style.display = 'block';
+        //     setTimeout(() => popup.style.display = 'none', 3000);
+        // }
+    }
+
+
     // IIFE for initial theme application (dark/light class on body)
     (function() {
         const themePreference = localStorage.getItem('themePreference');
@@ -215,37 +238,160 @@
 
     function initializeUserProfileSettings() {
         const userSelect = document.getElementById('profileUserSelect');
-        if (!userSelect || typeof flask_users_list === 'undefined' || typeof flask_all_user_details === 'undefined') {
-            console.error("User profile settings elements or initial Flask data not found.");
+        const newDisplayNameInput = document.getElementById('newDisplayNameInput');
+        const saveDisplayNameBtn = document.getElementById('saveDisplayNameBtn');
+        const changeAvatarBtn = document.getElementById('changeAvatarBtn');
+        const newAccentColorInput = document.getElementById('newAccentColorInput');
+        const saveAccentColorBtn = document.getElementById('saveAccentColorBtn');
+        const detailsDiv = document.getElementById('selectedUserProfileDetails');
+
+        if (!userSelect || !newDisplayNameInput || !saveDisplayNameBtn || !changeAvatarBtn || !newAccentColorInput || !saveAccentColorBtn || !detailsDiv || typeof flask_users_list === 'undefined' || typeof flask_all_user_details === 'undefined') {
+            console.error("One or more user profile settings elements or initial Flask data not found.");
             return;
         }
+
+        // Populate user select dropdown
         flask_users_list.forEach(username => {
             const option = document.createElement('option');
             option.value = username;
             option.textContent = username;
             userSelect.appendChild(option);
         });
-        userSelect.addEventListener('change', function() {
-            const selectedUsername = this.value;
-            const detailsDiv = document.getElementById('selectedUserProfileDetails');
-            if (selectedUsername) {
-                const userData = flask_all_user_details[selectedUsername];
-                const userDisplayName = localStorage.getItem(`user_${selectedUsername}_displayName`) || selectedUsername;
-                const userAvatar = localStorage.getItem(`user_${selectedUsername}_avatarUrl`) || "{{ url_for('static', filename='images/avatars/default_avatar.png') }}";
-                const userAccentColor = localStorage.getItem(`user_${selectedUsername}_accentColor`) || 'grey';
+
+        function updateProfileDetailsDisplay(username) {
+            currentSelectedUserForSettings = username;
+            if (username) {
+                const userDataFromServer = flask_all_user_details[username]; // Original data from server (for stars)
+                const userDisplayName = localStorage.getItem(`user_${username}_displayName`) || username;
+                const userAvatar = localStorage.getItem(`user_${username}_avatarUrl`) || "{{ url_for('static', filename='images/avatars/default_avatar.png') }}";
+                const userAccentColor = localStorage.getItem(`user_${username}_accentColor`) || 'grey';
+                // Fetch latest star count directly from server data or update it if purchases happen
+                // For now, flask_all_user_details is initial. We need to update this if stars change.
+                // Let's add a function to update stars locally for the display.
+                const currentStars = userDataFromServer ? userDataFromServer.stars : ( (flask_all_user_details[username] && flask_all_user_details[username].stars) ? flask_all_user_details[username].stars : 0);
+
+
                 document.getElementById('selectedUserNameHeader').textContent = userDisplayName;
                 document.getElementById('currentDisplayName').textContent = userDisplayName;
                 document.getElementById('currentAvatar').src = userAvatar;
                 document.getElementById('currentAccentColorDisplay').style.backgroundColor = userAccentColor;
-                document.getElementById('currentUserStars').textContent = userData ? userData.stars : '-';
+                document.getElementById('currentUserStars').textContent = currentStars;
+
+                newDisplayNameInput.value = userDisplayName;
+                newDisplayNameInput.disabled = false;
+                saveDisplayNameBtn.disabled = false;
+
+                changeAvatarBtn.disabled = false;
+
+                newAccentColorInput.value = userAccentColor;
+                newAccentColorInput.disabled = false;
+                saveAccentColorBtn.disabled = false;
+
                 detailsDiv.style.display = 'block';
-                document.getElementById('newDisplayNameInput').value = userDisplayName;
-                document.getElementById('newAccentColorInput').value = userAccentColor;
             } else {
                 detailsDiv.style.display = 'none';
+                newDisplayNameInput.disabled = true;
+                saveDisplayNameBtn.disabled = true;
+                changeAvatarBtn.disabled = true;
+                newAccentColorInput.disabled = true;
+                saveAccentColorBtn.disabled = true;
+                currentSelectedUserForSettings = null;
+            }
+        }
+
+        function updateUserStarsDisplay(username, newStarCount) {
+            if (flask_all_user_details[username]) {
+                flask_all_user_details[username].stars = newStarCount; // Update local cache of star data
+            }
+            document.getElementById('currentUserStars').textContent = newStarCount;
+             // Also update the main dashboard data if it's being displayed or used elsewhere dynamically (complex)
+            // For now, this updates the settings page view.
+        }
+
+
+        userSelect.addEventListener('change', function() {
+            updateProfileDetailsDisplay(this.value);
+        });
+
+        async function processPurchase(itemType, value) {
+            if (!currentSelectedUserForSettings) {
+                showSettingsPopup("No user selected.", "error");
+                return;
+            }
+            const cost = STAR_COSTS[itemType];
+            const confirmationMessage = `This will cost ${cost} stars. Proceed?`;
+            if (!confirm(confirmationMessage)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/settings/purchase/${currentSelectedUserForSettings}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_type: itemType, value: value })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSettingsPopup(data.message || "Purchase successful!", "success");
+                    updateUserStarsDisplay(currentSelectedUserForSettings, data.newStars);
+
+                    // Update localStorage and UI based on itemType
+                    if (itemType === 'displayName') {
+                        localStorage.setItem(`user_${currentSelectedUserForSettings}_displayName`, value);
+                        document.getElementById('currentDisplayName').textContent = value;
+                        document.getElementById('selectedUserNameHeader').textContent = value; // Update header too
+                    } else if (itemType === 'accentColor') {
+                        localStorage.setItem(`user_${currentSelectedUserForSettings}_accentColor`, value);
+                        document.getElementById('currentAccentColorDisplay').style.backgroundColor = value;
+                    } else if (itemType === 'avatar') {
+                        // Assuming 'value' is the new avatar URL
+                        localStorage.setItem(`user_${currentSelectedUserForSettings}_avatarUrl`, value);
+                        document.getElementById('currentAvatar').src = value;
+                    }
+                } else {
+                    showSettingsPopup(data.message || "Purchase failed.", "error");
+                    if(data.currentStars !== undefined) { // If server sends back current stars on fail
+                        updateUserStarsDisplay(currentSelectedUserForSettings, data.currentStars);
+                    }
+                }
+            } catch (error) {
+                console.error("Purchase fetch error:", error);
+                showSettingsPopup("An error occurred while making the purchase.", "error");
+            }
+        }
+
+        saveDisplayNameBtn.addEventListener('click', function() {
+            const newName = newDisplayNameInput.value.trim();
+            if (newName && newName.length >= 3) {
+                processPurchase('displayName', newName);
+            } else {
+                showSettingsPopup("Display name must be at least 3 characters.", "error");
             }
         });
-        console.log("User Profile Settings initialized.");
+
+        saveAccentColorBtn.addEventListener('click', function() {
+            const newColor = newAccentColorInput.value;
+            processPurchase('accentColor', newColor);
+        });
+
+        changeAvatarBtn.addEventListener('click', function() {
+            // For avatar, we'll prompt for a URL as a simple implementation
+            const newAvatarUrl = prompt("Enter new avatar image URL (e.g., https://example.com/avatar.png):");
+            if (newAvatarUrl) { // Basic check if URL was entered
+                 // Add basic URL validation if needed
+                if (newAvatarUrl.startsWith('http://') || newAvatarUrl.startsWith('https://')) {
+                     processPurchase('avatar', newAvatarUrl);
+                } else {
+                    showSettingsPopup("Invalid URL. Must start with http:// or https://", "error");
+                }
+            } else if (newAvatarUrl === "") { // User entered empty string
+                 showSettingsPopup("Avatar URL cannot be empty if you want to change it.", "info");
+            } // If null (cancelled prompt), do nothing
+        });
+
+
+        console.log("User Profile Settings initialized with purchase functionality.");
     }
 
     function handleLockSettings() {
