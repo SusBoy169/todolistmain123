@@ -49,7 +49,28 @@
                     <button id="resetAllTasksBtn">Reset All Tasks</button>
                     <button id="exportTaskHistoryBtn" disabled>Export Task History (CSV)</button>
                 </div>
+
+                <hr style="margin: 20px 0;">
+
+                <div class="setting-item">
+                    <label for="addUserNameInput">Add New User:</label>
+                    <form method="POST" action="{{ url_for('add_user_admin') }}" style="display: flex; align-items: center; gap: 10px; margin-top:5px;">
+                        <input type="text" id="addUserNameInput" name="new_username" placeholder="Enter new user's name" required style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow:1;">
+                        <button type="submit" class="button-style" style="padding: 8px 15px;">Add User</button>
+                    </form>
+                </div>
             </div>
+
+            {# Display flashed messages here as well, specific to settings page actions #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flashes-container" style="margin: 15px auto; padding: 10px; border-radius: 5px; text-align:center; max-width: 500px;">
+                    {% for category, message in messages %}
+                        <p class="{{ category }}" style="color: {% if category == 'error' %}#D8000C{% elif category == 'success' %}#4F8A10{% else %}#00529B{% endif %}; background-color: {% if category == 'error' %}#FFD2D2{% elif category == 'success' %}#DFF2BF{% else %}#BDE5F8{% endif %}; padding: 8px; border-radius: 3px; margin-bottom: 5px;">{{ message }}</p>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
             <div class="settings-section-card" id="user-profile-settings-section">
                 <h2>🧑‍💻 User Profile Settings</h2>
@@ -96,6 +117,13 @@
                         <label for="newAccentColorInput">New Dashboard Card Color (Cost: 25 ⭐):</label>
                         <input type="color" id="newAccentColorInput" value="#d3d3d3" disabled>
                         <button id="saveAccentColorBtn" disabled>Save Color</button>
+                    </div>
+
+                    <hr style="margin: 20px 0;">
+                    <div class="setting-item danger-zone">
+                        <label style="color: #D8000C; font-weight: bold;">Danger Zone:</label>
+                        <button id="deleteThisUserBtn" class="button-style-danger" disabled style="background-color: #ff4d4d; color:white; border-color: #ff3030;">Delete This User</button>
+                        <p id="deleteUserStatus" class="status-message" style="display:none;"></p>
                     </div>
                 </div>
             </div>
@@ -247,10 +275,12 @@
         const avatarSelectionContainer = document.getElementById('avatarSelectionContainer');
         const newAccentColorInput = document.getElementById('newAccentColorInput');
         const saveAccentColorBtn = document.getElementById('saveAccentColorBtn');
+        const deleteThisUserBtn = document.getElementById('deleteThisUserBtn');
+        const deleteUserStatus = document.getElementById('deleteUserStatus');
         const detailsDiv = document.getElementById('selectedUserProfileDetails');
 
-        if (!userSelect || !newDisplayNameInput || !saveDisplayNameBtn || !avatarSelectionContainer || !newAccentColorInput || !saveAccentColorBtn || !detailsDiv || typeof flask_users_list === 'undefined' || typeof flask_all_user_details === 'undefined') {
-            console.error("One or more user profile settings elements or initial Flask data not found.");
+        if (!userSelect || !newDisplayNameInput || !saveDisplayNameBtn || !avatarSelectionContainer || !newAccentColorInput || !saveAccentColorBtn || !deleteThisUserBtn || !deleteUserStatus || !detailsDiv || typeof flask_users_list === 'undefined' || typeof flask_all_user_details === 'undefined') {
+            console.error("One or more user profile settings elements (including delete button/status) or initial Flask data not found.");
             return;
         }
 
@@ -330,6 +360,7 @@
                 newAccentColorInput.value = userAccentColor;
                 newAccentColorInput.disabled = false;
                 saveAccentColorBtn.disabled = false;
+                deleteThisUserBtn.disabled = false;
 
                 detailsDiv.style.display = 'block';
             } else {
@@ -422,8 +453,60 @@
         // The old changeAvatarBtn event listener is removed as the button is gone.
         // Clicking on an avatar in the grid now triggers processPurchase.
 
+        deleteThisUserBtn.addEventListener('click', async function() {
+            if (!currentSelectedUserForSettings) {
+                showSettingsPopup("No user selected for deletion.", "error");
+                return;
+            }
+            const usernameToDelete = currentSelectedUserForSettings; // For clarity in this function scope
+
+            const confirmation = confirm(`ARE YOU ABSOLUTELY SURE you want to permanently delete user '${usernameToDelete}' and all their tasks and data? This action cannot be undone.`);
+            if (!confirmation) return;
+
+            const secondConfirmation = confirm(`Final confirmation: Deleting '${usernameToDelete}' is irreversible. Proceed?`);
+            if (!secondConfirmation) return;
+
+            deleteUserStatus.textContent = `Attempting to delete ${usernameToDelete}...`;
+            deleteUserStatus.className = 'status-message info-message';
+            deleteUserStatus.style.display = 'block';
+
+            try {
+                const response = await fetch(`/admin/delete_user/${usernameToDelete}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' } // Backend expects POST, no specific body needed for this action
+                });
+
+                // The backend redirects on success/failure and flashes messages.
+                // So, the ideal scenario is that the page reloads due to redirect.
+                // We'll try to parse JSON if it's an error response that didn't redirect.
+                if (response.redirected || response.ok) { // OK might mean it sent JSON before redirect, or just 200
+                    deleteUserStatus.textContent = `User '${usernameToDelete}' deletion process initiated. Page will refresh.`;
+                    deleteUserStatus.className = 'status-message success-message';
+                    // Give a moment for the message to be seen before potential redirect from server takes over or we force it
+                    setTimeout(() => {
+                        window.location.reload(); // Reload settings to reflect user list change
+                    }, 1500);
+                } else {
+                    let errorMsg = `Failed to delete user '${usernameToDelete}'. Status: ${response.status}.`;
+                    try {
+                        const data = await response.json();
+                        errorMsg = data.message || errorMsg;
+                    } catch (e) { /* ignore if no JSON body */ }
+                    deleteUserStatus.textContent = errorMsg;
+                    deleteUserStatus.className = 'status-message error-message';
+                    showSettingsPopup(errorMsg, "error");
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                deleteUserStatus.textContent = `Client-side error deleting user: ${error.message}`;
+                deleteUserStatus.className = 'status-message error-message';
+                showSettingsPopup(`An error occurred: ${error.message}`, "error");
+            }
+            setTimeout(() => { deleteUserStatus.style.display = 'none'; }, 5000); // Hide status after a while
+        });
+
         populateAvatarSelection(); // Populate the avatar grid when settings page initializes
-        console.log("User Profile Settings initialized with purchase functionality and avatar grid.");
+        console.log("User Profile Settings initialized with purchase and delete functionality and avatar grid.");
     }
 
     function handleLockSettings() {

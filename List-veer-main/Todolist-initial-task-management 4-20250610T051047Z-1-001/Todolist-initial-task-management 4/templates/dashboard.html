@@ -13,7 +13,7 @@
     <div class="tab-bar">
         <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'Home' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Home', tab_theme_colors.Default) }}">Home</a>
         {% for user_iter in users %}
-            <a href="{{ url_for('user_tab', username=user_iter) }}" class="tab {% if active_tab == user_iter %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get(user_iter, tab_theme_colors.Default) }}">{{ user_iter }}</a>
+            <a href="{{ url_for('main_app_view', user=user_iter) }}" class="tab {% if active_tab == user_iter %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get(user_iter, tab_theme_colors.Default) }}">{{ user_iter }}</a>
         {% endfor %}
         <a href="{{ url_for('dashboard') }}" class="tab {% if active_tab == 'Dashboard' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Dashboard', tab_theme_colors.Default) }}">Dashboard</a>
         <a href="{{ url_for('settings') }}" class="tab {% if active_tab == 'Settings' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Settings', tab_theme_colors.Default) }}">Settings</a>

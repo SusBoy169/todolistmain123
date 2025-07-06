@@ -13,12 +13,6 @@
             <div id="clock-display">IST Time</div>
         </div>
         <div class="top-bar-right">
-            {% if admin_mode %}
-            <form method="POST" action="{{ url_for('add_user_admin') }}" style="display: flex; align-items: center; gap: 5px; margin-right: 15px;">
-                <input type="text" name="new_username" placeholder="New User Name" required style="padding: 5px; border-radius: 3px; border: 1px solid #ccc;">
-                <button type="submit" class="nav-button-style" style="padding: 5px 10px;">Add User</button>
-            </form>
-            {% endif %}
             <a href="{{ url_for('dashboard') }}" class="nav-button-style" style="margin-right: 10px;">Analytics Dashboard</a>
             <div class="settings-link-container">
                  <a href="{{ url_for('settings') }}" class="nav-button-style">Settings</a>
