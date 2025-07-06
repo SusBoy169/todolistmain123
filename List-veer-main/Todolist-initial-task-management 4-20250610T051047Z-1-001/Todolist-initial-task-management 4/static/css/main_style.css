@@ -688,4 +688,164 @@ body.dark-mode .coming-soon-message {
     border-color: #444;
 }
 
+/* === New Dashboard (User Card View) Styles === */
+body.dashboard-body-style {
+    background-color: #f5f7fa; /* Light pastel background */
+}
+
+/* Override .content-area for this specific dashboard page if needed */
+.dashboard-body-style .content-area.dashboard-page {
+    background-color: transparent; /* Make content-area transparent if body has the color */
+    border: none; /* Remove borders from content-area if body has bg */
+    box-shadow: none; /* Remove shadow from content-area if body has bg */
+    padding-top: 20px; /* Add some top padding if needed */
+}
+
+.modern-dashboard-layout { /* This class is on .home-dashboard-container */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Center cards if they don't fill the row */
+    gap: 25px; /* Gap between cards */
+    padding: 20px; /* Padding around the group of cards */
+}
+
+.modern-user-card {
+    background-color: #ffffff; /* White cards */
+    border-radius: 12px; /* Rounded corners */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Soft shadows */
+    padding: 25px;
+    flex: 1 1 300px; /* Flex properties for responsiveness */
+    max-width: 340px; /* Max width of a card */
+    min-width: 280px; /* Min width of a card */
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.modern-user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Adapting existing .card-header, .avatar-placeholder, .user-info, .quick-summary, .summary-bubble, .card-actions from index.html styles.
+   These are generally fine but we might need to ensure they fit well with .modern-user-card if padding/margins conflict.
+   The .avatar-placeholder, .user-info h2, .stars-display, .summary-bubble, .button-style classes from existing CSS will apply.
+*/
+
+.modern-user-card .user-info h2.user-card-name { /* For bolding specifically */
+    font-weight: 600; /* Bolder than default h2 if needed */
+}
+
+.modern-user-card .stars-display {
+    font-weight: 600; /* Ensure star count is also prominent */
+    /* Gold star icon is already emoji ⭐ */
+}
+
+.modern-user-card .summary-bubble .bubble-label {
+    font-size: 0.75em; /* Smaller size for stats labels */
+}
+.modern-user-card .summary-bubble .bubble-value {
+    font-size: 1.7em; /* Adjust if needed */
+}
+
+/* New Button Styles for modern cards */
+.modern-user-card .button-style-vibrant {
+    /* Vibrant solid button - Example: Primary action color */
+    /* Re-using .button-style and overriding if necessary */
+}
+.modern-user-card .button-style-secondary-custom {
+     /* Greyed out secondary - Example */
+    /* Re-using .button-style-secondary and overriding if necessary */
+}
+
+
+/* Individual Card Themes */
+/* Veer: Orange (#ff9800) + Blue (#03a9f4) */
+#dashboard-card-veer {
+    border-top: 5px solid #ff9800; /* Orange top border */
+}
+#dashboard-card-veer .avatar-placeholder {
+    background-color: #03a9f4; /* Blue avatar background */
+}
+#dashboard-card-veer .button-style-vibrant {
+    background-color: #ff9800; /* Orange button */
+}
+#dashboard-card-veer .button-style-vibrant:hover {
+    background-color: #fb8c00; /* Darker Orange */
+}
+
+/* Vardaan: Soft Orange/Beige (e.g., Beige #f5f5dc, Soft Orange #ffe0b2) */
+#dashboard-card-vardaan {
+    border-top: 5px solid #ffe0b2; /* Soft Orange top border */
+}
+#dashboard-card-vardaan .avatar-placeholder {
+    background-color: #f5f5dc; /* Beige avatar background */
+    color: #795548; /* Darker text for beige */
+}
+#dashboard-card-vardaan .button-style-vibrant {
+    background-color: #ffe0b2;
+    color: #795548;
+}
+#dashboard-card-vardaan .button-style-vibrant:hover {
+    background-color: #ffcc80;
+}
+
+
+/* Avni: Pink (#e91e63) */
+#dashboard-card-avni {
+    border-top: 5px solid #e91e63; /* Pink top border */
+}
+#dashboard-card-avni .avatar-placeholder {
+    background-color: #e91e63; /* Pink avatar background */
+}
+#dashboard-card-avni .button-style-vibrant {
+    background-color: #e91e63;
+}
+#dashboard-card-avni .button-style-vibrant:hover {
+    background-color: #d81b60;
+}
+
+/* Drishti: Teal (#009688) */
+#dashboard-card-drishti {
+    border-top: 5px solid #009688; /* Teal top border */
+}
+#dashboard-card-drishti .avatar-placeholder {
+    background-color: #009688; /* Teal avatar background */
+}
+#dashboard-card-drishti .button-style-vibrant {
+    background-color: #009688;
+}
+#dashboard-card-drishti .button-style-vibrant:hover {
+    background-color: #00796b;
+}
+
+/* Dark Mode for new dashboard elements */
+body.dark-mode.dashboard-body-style {
+    background-color: #1a1d21; /* Darker pastel alternative */
+}
+body.dark-mode .modern-user-card {
+    background-color: #2c323a; /* Dark card background */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+body.dark-mode .modern-user-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+/* Specific theme border colors might need adjustment for dark mode visibility if they are too dark */
+body.dark-mode #dashboard-card-veer { border-top-color: #ffa726; }
+body.dark-mode #dashboard-card-vardaan { border-top-color: #ffcc80; }
+body.dark-mode #dashboard-card-avni { border-top-color: #f06292; }
+body.dark-mode #dashboard-card-drishti { border-top-color: #26a69a; }
+
+/* Avatar text and star colors are generally okay from existing styles, but ensure good contrast */
+body.dark-mode #dashboard-card-vardaan .avatar-placeholder {
+    background-color: #d7ccc8; /* Lighter beige for dark mode avatar bg */
+    color: #3e2723; /* Darker text for that bg */
+}
+body.dark-mode #dashboard-card-vardaan .button-style-vibrant {
+    background-color: #ffcc80;
+    color: #3e2723;
+}
+body.dark-mode #dashboard-card-vardaan .button-style-vibrant:hover {
+    background-color: #ffb74d;
+}
+
 [end of static/css/main_style.css]

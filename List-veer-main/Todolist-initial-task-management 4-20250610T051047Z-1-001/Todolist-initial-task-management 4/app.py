@@ -564,20 +564,39 @@ def dashboard():
         if completed_this_week_count > max_completed_count: # This logic is flawed for overall max
             max_completed_count = completed_this_week_count
 
-    # Corrected max_completed_count logic
-    overall_max_completed_count = 0
-    for item in task_completion_data_list:
-        if item['count'] > overall_max_completed_count:
-            overall_max_completed_count = item['count']
+    # The old leaderboard and graph data is no longer needed for this new dashboard design.
+    # Instead, prepare data similar to index()'s home_dashboard_data for user cards.
+
+    user_card_data = {}
+    user_data_global = get_all_user_data()
+    today_ist = datetime.now(IST).date() # Make sure today_ist is defined
+    yesterday_ist = today_ist - timedelta(days=1)
+
+    for user_name in users:
+        user_tasks = get_user_tasks(user_name)
+        current_total_pending_count = 0
+        for task in user_tasks:
+            if task.get('status') == 'pending':
+                 current_total_pending_count +=1
+
+        completed_today_count = get_completed_on_date_ist(user_tasks, today_ist)
+        completed_yesterday_count = get_completed_on_date_ist(user_tasks, yesterday_ist)
+
+        user_card_data[user_name] = {
+            "stars": user_data_global.get(user_name, {}).get("stars", 0),
+            "pending_count": current_total_pending_count,
+            "completed_today": completed_today_count,
+            "completed_yesterday": completed_yesterday_count
+        }
 
     return render_template("dashboard.html",
-                           leaderboard_data=leaderboard_data,
-                           task_completion_data=task_completion_data_list,
-                           max_graph_height=max(1, overall_max_completed_count),
-                           overall_max_completed_count_for_display=overall_max_completed_count, # Pass the raw count for conditional display
-                           users=users,
-                           active_tab="Dashboard",
-                           tab_theme_colors=TAB_THEME_COLORS)
+                           user_card_data=user_card_data, # New data for cards
+                           users=users, # Still needed for iterating users if card_data is dict
+                           current_date_str=today_ist.strftime('%A, %B %d, %Y'), # For navbar
+                           active_tab="Dashboard", # Or perhaps "Home" if this becomes the new home
+                           tab_theme_colors=TAB_THEME_COLORS, # For navbar/themes
+                           admin_mode=session.get('is_admin_mode', False) # For admin features in navbar
+                           )
 
 @app.route('/settings')
 def settings():

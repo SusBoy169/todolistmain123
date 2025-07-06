@@ -2,267 +2,169 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Weekly Dashboard - TaskStar</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}">
+    <title>TaskStar Dashboard</title> {# Updated title to reflect new purpose #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_style.css') }}">
 </head>
-<body>
-    <div id="clock-date-container">
-        <div id="date">Date</div> <div id="clock">Time</div>
-    </div>
-
-    <div class="tab-bar">
-        <a href="{{ url_for('index') }}" class="tab {% if active_tab == 'Home' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Home', tab_theme_colors.Default) }}">Home</a>
-        {% for user_iter in users %}
-            <a href="{{ url_for('main_app_view', user=user_iter) }}" class="tab {% if active_tab == user_iter %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get(user_iter, tab_theme_colors.Default) }}">{{ user_iter }}</a>
-        {% endfor %}
-        <a href="{{ url_for('dashboard') }}" class="tab {% if active_tab == 'Dashboard' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Dashboard', tab_theme_colors.Default) }}">Dashboard</a>
-        <a href="{{ url_for('settings') }}" class="tab {% if active_tab == 'Settings' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Settings', tab_theme_colors.Default) }}">Settings</a>
+<body class="dashboard-body-style">
+    <div class="top-bar sticky">
+        <div class="app-logo">TaskStar 🌟</div>
+        <div class="top-bar-center">
+            <div id="date-display">{{ current_date_str }}</div>
+            <div id="clock-display">IST Time</div>
+        </div>
+        <div class="top-bar-right">
+            {# Example: Link to where old analytics might live, or other relevant links #}
+            {# <a href="{{ url_for('original_analytics_route_if_any') }}" class="nav-button-style" style="margin-right: 10px;">View Analytics</a> #}
+            <div class="settings-link-container">
+                 <a href="{{ url_for('settings') }}" class="nav-button-style">Settings</a>
+            </div>
+        </div>
     </div>
 
     <div class="content-area dashboard-page">
-        <h1>Weekly Dashboard</h1>
-
-        <div class="dashboard-section-card leaderboard-card">
-            <h2>⭐ Star Leaderboard</h2>
-            {% if leaderboard_data %}
-                <ol class="leaderboard-list">
-                    {% for user_entry in leaderboard_data %}
-                        <li class="leaderboard-item">
-                            <span class="leaderboard-rank">{{ loop.index }}</span>
-                            <div class="leaderboard-avatar" style="background-color: {{ tab_theme_colors.get(user_entry[0], tab_theme_colors.Default)|replace('#', 'avatar-bg-') }};">
-                                {{ user_entry[0][0]|upper }}
-                            </div>
-                            <span class="leaderboard-name">{{ user_entry[0] }}</span>
-                            <span class="leaderboard-stars">{{ user_entry[1] }} Stars</span>
-                        </li>
-                    {% endfor %}
-                </ol>
-            {% else %}
-                <p class="no-data-message">No star data available yet.</p>
-            {% endif %}
-        </div>
-
-        <div class="dashboard-section-card graph-card">
-            <h2 style="margin-top: 0;">📊 Task Completion Graph (This Week)</h2>
-        {% if task_completion_data %}
-            <div class="graph-visualization-area" style="height: 200px;"> {# Increased height slightly #}
-                {% for data_item in task_completion_data %}
-                    <div class="graph-bar-item">
-                        <div class="bar-value">{{ data_item.count }}</div>
-                        <div class="bar-itself" style="background-color: {{ data_item.color }}; height: {{ (data_item.count / max_graph_height) * 100 if max_graph_height > 0 else 0 }}%;" title="{{ data_item.user }} - {{ data_item.count }} tasks">
-                            {# This div is the bar #}
-                        </div>
-                        <div class="bar-label">{{ data_item.user }}</div>
+        <div class="home-dashboard-container modern-dashboard-layout">
+            {% for user_name in users %}
+            <div class="modern-user-card" id="dashboard-card-{{ user_name.lower() }}">
+                <div class="card-header">
+                    <div class="avatar-placeholder" id="dashboard-avatar-{{ user_name.lower() }}">
+                        {{ user_name[0]|upper }}
                     </div>
-                {% endfor %}
+                    <div class="user-info">
+                        <h2 class="user-card-name">{{ user_name }}</h2>
+                        <p class="stars-display">⭐ {{ user_card_data[user_name].stars }}</p>
+                    </div>
+                </div>
+
+                <div class="quick-summary">
+                    <div class="summary-bubble pending-bubble">
+                        <span class="bubble-value">{{ user_card_data[user_name].pending_count }}</span>
+                        <span class="bubble-label">🕒 Pending</span>
+                    </div>
+                    <div class="summary-bubble today-bubble">
+                        <span class="bubble-value">{{ user_card_data[user_name].completed_today }}</span>
+                        <span class="bubble-label">✅ Completed Today</span>
+                    </div>
+                    <div class="summary-bubble yesterday-bubble">
+                        <span class="bubble-value">{{ user_card_data[user_name].completed_yesterday }}</span>
+                        <span class="bubble-label">⏮️ Done Yesterday</span>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <a href="{{ url_for('main_app_view', user=user_name) }}" class="button-style button-style-vibrant">Go to My To-Do List</a>
+                    <a href="{{ url_for('main_app_view', user=user_name) }}" class="button-style button-style-secondary-custom">View & Edit Tasks</a>
+                </div>
             </div>
-            {% if overall_max_completed_count_for_display == 0 %}
-            <p class="no-data-message">No tasks completed this week to display in graph.</p>
-            {% endif %}
-        {% else %}
-            <p style="text-align:center;">Task completion data is unavailable.</p>
-        {% endif %}
+            {% endfor %}
         </div>
-
-        <div class="dashboard-section-card efficiency-tracker-placeholder">
-            <h2 style="margin-top: 0;">⏱️ Efficiency Tracker</h2>
-            <p class="coming-soon-message">(Coming Soon)</p>
-        </div>
-
     </div>
 
     <script>
-    // Standard clock/date script
-    function updateClockAndDate() {
+    // --- Clock Function ---
+    function updateClockIST_Dashboard() {
         const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const timeString = `${hours}:${minutes}:${seconds}`;
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const dateString = now.toLocaleDateString(undefined, options);
-        const clockElement = document.getElementById('clock');
-        const dateElement = document.getElementById('date');
+        const utcYear = now.getUTCFullYear();
+        const utcMonth = now.getUTCMonth();
+        const utcDate = now.getUTCDate();
+        const utcHours = now.getUTCHours();
+        const utcMinutes = now.getUTCMinutes();
+        const utcSeconds = now.getUTCSeconds();
+        const utcDateTime = new Date(Date.UTC(utcYear, utcMonth, utcDate, utcHours, utcMinutes, utcSeconds));
+        utcDateTime.setHours(utcDateTime.getHours() + 5);
+        utcDateTime.setMinutes(utcDateTime.getMinutes() + 30);
+
+        const istHours = String(utcDateTime.getUTCHours()).padStart(2, '0');
+        const istMinutes = String(utcDateTime.getUTCMinutes()).padStart(2, '0');
+        const istSeconds = String(utcDateTime.getUTCSeconds()).padStart(2, '0');
+
+        const timeString =
+            String(istHours).padStart(2, '0') + ':' +
+            String(istMinutes).padStart(2, '0') + ':' +
+            String(istSeconds).padStart(2, '0') + ' IST';
+        const clockElement = document.getElementById('clock-display');
         if (clockElement) clockElement.textContent = timeString;
-        if (dateElement) dateElement.textContent = dateString;
     }
 
-    // Function to apply the theme (dark/light)
-    function applyTheme(theme) {
-        console.log('[Theme] Applying theme:', theme);
+    // --- User Customizations (for new card layout) ---
+    function applyUserCustomizations_DashboardPage() {
+        const userCards = document.querySelectorAll('.modern-user-card');
+        const usersArray = {{ users|tojson }};
+
+        userCards.forEach(card => {
+            const cardId = card.id;
+            if (!cardId || !cardId.startsWith('dashboard-card-')) return;
+            const lowerUserName = cardId.replace('dashboard-card-', '');
+
+            let originalUserName = null;
+            for (let i = 0; i < usersArray.length; i++) {
+                if (usersArray[i].toLowerCase() === lowerUserName) {
+                    originalUserName = usersArray[i];
+                    break;
+                }
+            }
+            if (!originalUserName) {
+                console.warn("Could not find original username for card ID:", cardId);
+                return;
+            }
+
+            // 1. Update Display Name
+            const userNameElement = card.querySelector('h2.user-card-name');
+            const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+            if (storedDisplayName && userNameElement) {
+                userNameElement.textContent = storedDisplayName;
+            }
+
+            // 2. Update Avatar
+            const storedAvatarUrl = localStorage.getItem(`user_${originalUserName}_avatarUrl`);
+            const avatarPlaceholder = card.querySelector(`#dashboard-avatar-${lowerUserName}`);
+            if (storedAvatarUrl && avatarPlaceholder) {
+                avatarPlaceholder.textContent = '';
+                const img = document.createElement('img');
+                img.src = storedAvatarUrl;
+                img.alt = originalUserName + "'s Avatar";
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                avatarPlaceholder.appendChild(img);
+            }
+        });
+    }
+
+    // --- Theme (dark/light mode) Functionality ---
+    function applyTheme_Dashboard(theme) {
         if (theme === 'dark') {
             document.body.classList.add('dark-mode');
         } else {
             document.body.classList.remove('dark-mode');
         }
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        if (darkModeToggle) {
-            darkModeToggle.checked = (theme === 'dark');
-            console.log('[Theme] Toggle switch on settings page updated to:', darkModeToggle.checked);
-        }
     }
 
-    // Function to handle theme changes from the toggle switch
-    function handleThemeToggle() {
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        if (!darkModeToggle) return;
-        darkModeToggle.addEventListener('change', function() {
-            const newTheme = this.checked ? 'dark' : 'light';
-            console.log('[Theme] Toggle changed. New theme selected:', newTheme);
-            localStorage.setItem('themePreference', newTheme);
-            applyTheme(newTheme);
-            if (typeof applyPageBackgroundColor === 'function') {
-                console.log('[Theme] Re-applying page background color after toggle.');
-                applyPageBackgroundColor();
-            }
-        });
-        console.log('[Theme] Event listener attached to dark mode toggle.');
-    }
-
-    // Modified function to apply tab-specific body background (respects dark mode)
-    function applyPageBackgroundColor() {
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        console.log('[Theme] applyPageBackgroundColor called. Dark mode active?', isDarkMode);
-        if (isDarkMode) {
-            document.body.style.backgroundColor = '';
-            console.log('[Theme] Dark mode is ON. Body background cleared to let CSS rule apply.');
-            return;
-        }
-        const activeTab = document.querySelector('.tab.active-tab');
-        if (activeTab) {
-            const themeColor = activeTab.dataset.themeColor;
-            if (themeColor) {
-                document.body.style.backgroundColor = themeColor;
-                console.log('[Theme] Light mode. Active tab theme color applied to body:', themeColor);
-            } else {
-                document.body.style.backgroundColor = '#f4f7f6';
-                console.log('[Theme] Light mode. Active tab has no theme color. Default bg applied.');
-            }
-        } else {
-            document.body.style.backgroundColor = '#f4f7f6';
-            console.log('[Theme] Light mode. No active tab found. Default bg applied.');
-        }
-    }
-
-    // Function to apply hover/active styles to tabs
-    function applyTabHoverAndActiveStyles() {
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-            const themeColor = tab.dataset.themeColor;
-            if (themeColor) {
-                if (tab.classList.contains('active-tab')) {
-                    tab.style.borderTopColor = themeColor;
-                }
-                tab.addEventListener('mouseenter', () => { if (!tab.classList.contains('active-tab')) { tab.style.borderTopColor = themeColor; } });
-                tab.addEventListener('mouseleave', () => { if (!tab.classList.contains('active-tab')) { tab.style.borderTopColor = 'transparent'; } });
-            }
-        });
-    }
-
-    // Main initialization function
-    function initializePageFeatures() {
-        console.log('[Theme] Initializing page features...');
-        const storedTheme = localStorage.getItem('themePreference');
-        console.log('[Theme] Stored theme preference on load:', storedTheme);
-        if (storedTheme) {
-            applyTheme(storedTheme);
-        } else {
-            applyTheme('light');
-        }
-        applyTabHoverAndActiveStyles();
-        applyPageBackgroundColor();
-        const activeTab = document.querySelector('.tab.active-tab');
-        if (activeTab) {
-            const activeTabIdentifier = activeTab.getAttribute('href');
-            const themeColor = activeTab.dataset.themeColor;
-            if (activeTabIdentifier) {
-                localStorage.setItem('lastActiveTabIdentifier', activeTabIdentifier);
-                console.log('[Theme] Saved lastActiveTabIdentifier:', activeTabIdentifier);
-            }
-            if (themeColor) {
-                localStorage.setItem('lastActiveTabColor', themeColor);
-                console.log('[Theme] Saved lastActiveTabColor:', themeColor);
-            }
-        }
-        handleThemeToggle();
-        if (typeof updateClockAndDate === 'function') {
-            updateClockAndDate();
-        }
-    }
-
-    // IIFE for *very first* background color application
+    // --- Main Initialization ---
     (function() {
-        const lastColor = localStorage.getItem('lastActiveTabColor');
-        const themePreference = localStorage.getItem('themePreference');
-        if (themePreference === 'dark') {
-            document.body.classList.add('dark-mode');
-            console.log('[Theme IIFE] Dark mode preference found. Applied dark-mode class.');
-        } else if (lastColor) {
-            document.body.style.backgroundColor = lastColor;
-            console.log('[Theme IIFE] Light mode. Applied lastActiveTabColor:', lastColor);
+        // Apply initial theme immediately
+        const initialTheme = localStorage.getItem('themePreference') || 'light';
+        applyTheme_Dashboard(initialTheme);
+
+        function initializeAllDashboardFeatures() {
+            updateClockIST_Dashboard();
+            applyUserCustomizations_DashboardPage();
+            console.log('Modern Dashboard page features initialized.');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeAllDashboardFeatures();
+                if (!window.clockIntervalId_dashboard_page_final) {
+                    window.clockIntervalId_dashboard_page_final = setInterval(updateClockIST_Dashboard, 1000);
+                }
+            });
+        } else {
+            initializeAllDashboardFeatures();
+            if (!window.clockIntervalId_dashboard_page_final) {
+                 window.clockIntervalId_dashboard_page_final = setInterval(updateClockIST_Dashboard, 1000);
+            }
         }
     })();
-
-    // DOMContentLoaded listener
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializePageFeatures);
-    } else {
-        initializePageFeatures();
-    }
-
-    if (typeof updateClockAndDate === 'function') {
-       setInterval(updateClockAndDate, 1000);
-    }
-
-    function applyCustomUserDisplayNames_Dashboard() {
-        // Leaderboard
-        const leaderboardItems = document.querySelectorAll('.content-area ol li');
-        leaderboardItems.forEach(item => {
-            const nameSpan = item.querySelector('span:first-child'); // "1. UserName"
-            if (nameSpan) {
-                const match = nameSpan.textContent.match(/^\d+\.\s*(.+)$/);
-                if (match && match[1]) {
-                    const originalUserName = match[1].trim();
-                    const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
-                    if (storedDisplayName) {
-                        const numericPrefix = nameSpan.textContent.match(/^\d+\.\s*/)[0];
-                        nameSpan.textContent = numericPrefix + storedDisplayName;
-                    }
-                }
-            }
-        });
-
-        // Task Completion Graph
-        const graphUserLabels = document.querySelectorAll('.graph-bars-area .graph-day-column > div:last-child'); // The div with username
-        graphUserLabels.forEach(label => {
-            const originalUserName = label.textContent.trim();
-            const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
-            if (storedDisplayName) {
-                label.textContent = storedDisplayName;
-            }
-        });
-        const graphBarTitles = document.querySelectorAll('.graph-bars-area .graph-day-column .bar[title]'); // The bar itself with title attribute
-        graphBarTitles.forEach(bar => {
-            const title = bar.getAttribute('title'); // "UserName - X tasks"
-            if(title){
-                const parts = title.split(' - ');
-                if(parts.length > 0){
-                    const originalUserName = parts[0].trim();
-                    const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
-                    if (storedDisplayName) {
-                        bar.setAttribute('title', storedDisplayName + (parts.length > 1 ? ' - ' + parts.slice(1).join(' - ') : ''));
-                    }
-                }
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        applyCustomUserDisplayNames_Dashboard();
-    });
-    if (document.readyState !== 'loading') {
-        applyCustomUserDisplayNames_Dashboard();
-    }
     </script>
 </body>
 </html>
