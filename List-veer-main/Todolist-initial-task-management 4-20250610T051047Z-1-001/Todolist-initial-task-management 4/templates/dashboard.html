@@ -19,45 +19,55 @@
         <a href="{{ url_for('settings') }}" class="tab {% if active_tab == 'Settings' %}active-tab{% endif %}" data-theme-color="{{ tab_theme_colors.get('Settings', tab_theme_colors.Default) }}">Settings</a>
     </div>
 
-    <div class="content-area">
+    <div class="content-area dashboard-page">
         <h1>Weekly Dashboard</h1>
 
-        <h2>Star Leaderboard</h2>
-        {% if leaderboard_data %}
-            <ol>
-                {% for user_entry in leaderboard_data %}
-                    <li>
-                        <span>{{ loop.index }}. {{ user_entry[0] }}</span>
-                        <span> - {{ user_entry[1] }} Stars</span>
-                    </li>
-                {% endfor %}
-            </ol>
-        {% else %}
-            <p>No star data available yet.</p>
-        {% endif %}
+        <div class="dashboard-section-card leaderboard-card">
+            <h2>⭐ Star Leaderboard</h2>
+            {% if leaderboard_data %}
+                <ol class="leaderboard-list">
+                    {% for user_entry in leaderboard_data %}
+                        <li class="leaderboard-item">
+                            <span class="leaderboard-rank">{{ loop.index }}</span>
+                            <div class="leaderboard-avatar" style="background-color: {{ tab_theme_colors.get(user_entry[0], tab_theme_colors.Default)|replace('#', 'avatar-bg-') }};">
+                                {{ user_entry[0][0]|upper }}
+                            </div>
+                            <span class="leaderboard-name">{{ user_entry[0] }}</span>
+                            <span class="leaderboard-stars">{{ user_entry[1] }} Stars</span>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% else %}
+                <p class="no-data-message">No star data available yet.</p>
+            {% endif %}
+        </div>
 
-        <h2 style="margin-top: 30px;">Task Completion Graph (This Week)</h2>
+        <div class="dashboard-section-card graph-card">
+            <h2 style="margin-top: 0;">📊 Task Completion Graph (This Week)</h2>
         {% if task_completion_data %}
-            <div style="display: flex; align-items: flex-end; height: 150px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; background-color: #f7f7f7;">
+            <div class="graph-visualization-area" style="height: 200px;"> {# Increased height slightly #}
                 {% for data_item in task_completion_data %}
-                    <div style="display: flex; flex-direction: column; align-items: center; margin-right: 10px; text-align: center; flex-grow: 1; justify-content: flex-end;">
-                        <div>{{ data_item.count }}</div>
-                        <div style="width: 50px; margin-top: 5px; background-color: {{ data_item.color }}; height: {{ (data_item.count / max_graph_height) * 100 if max_graph_height > 0 else 0 }}%;" title="{{ data_item.user }} - {{ data_item.count }} tasks">
+                    <div class="graph-bar-item">
+                        <div class="bar-value">{{ data_item.count }}</div>
+                        <div class="bar-itself" style="background-color: {{ data_item.color }}; height: {{ (data_item.count / max_graph_height) * 100 if max_graph_height > 0 else 0 }}%;" title="{{ data_item.user }} - {{ data_item.count }} tasks">
                             {# This div is the bar #}
                         </div>
-                        <div style="margin-top: 5px; font-size: 0.9em;">{{ data_item.user }}</div>
+                        <div class="bar-label">{{ data_item.user }}</div>
                     </div>
                 {% endfor %}
             </div>
             {% if overall_max_completed_count_for_display == 0 %}
-            <p style="text-align:center; font-size:0.9em; margin-top: 5px;">No tasks completed this week to display in graph.</p>
+            <p class="no-data-message">No tasks completed this week to display in graph.</p>
             {% endif %}
         {% else %}
             <p style="text-align:center;">Task completion data is unavailable.</p>
         {% endif %}
+        </div>
 
-        <h2 style="margin-top: 30px;">Efficiency Tracker</h2>
-        <p style="text-align:center;">(Coming Soon)</p>
+        <div class="dashboard-section-card efficiency-tracker-placeholder">
+            <h2 style="margin-top: 0;">⏱️ Efficiency Tracker</h2>
+            <p class="coming-soon-message">(Coming Soon)</p>
+        </div>
 
     </div>
 
