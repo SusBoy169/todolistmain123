@@ -38,8 +38,13 @@
                 <span id="stars-{{ user_name.lower() }}">
                     (⭐ {{ all_users_data[user_name].stars }})
                 </span>
+                {% if admin_mode %}
+                <button class="button-delete-user" data-username="{{ user_name }}" style="margin-left: 15px; background-color: #ff4d4d; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; cursor: pointer;">
+                    Delete User
+                </button>
+                {% endif %}
             </h2>
-            {% if admin_mode and display_user == user_name %}
+            {% if admin_mode and display_user == user_name %} {# This condition is for "Add Task" button, specific to when a single user is displayed #}
             <div class="add-task-area">
                 <button class="button-style-add-task" onclick="openAddTaskModal('{{ user_name }}')">➕ Add Task</button>
             </div>
@@ -291,6 +296,83 @@
         }
         window.pageFeaturesInitialized_taskView = true;
     }
+
+    function applyCustomUserDisplayNames_TaskView() {
+        const userColumns = document.querySelectorAll('.user-column');
+        userColumns.forEach(column => {
+            const h2Element = column.querySelector('h2');
+            if (h2Element) {
+                // The h2 text content might be just "User Name" or "User Name (⭐ Stars)"
+                // We need the base user name. Assuming it's the first part before any potential " (".
+                const currentText = h2Element.textContent.trim();
+                const baseUserNameMatch = currentText.match(/^([^\s\(]+)/);
+                if (baseUserNameMatch && baseUserNameMatch[1]) {
+                    const originalUserName = baseUserNameMatch[1];
+                    const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+                    if (storedDisplayName) {
+                        // Preserve the star count part if it exists
+                        const starPartMatch = currentText.match(/(\s*\(⭐\s*\d+\))$/);
+                        const starPart = starPartMatch ? starPartMatch[1] : '';
+                        h2Element.textContent = storedDisplayName + starPart;
+                    }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        applyCustomUserDisplayNames_TaskView();
+    });
+    // If DOM is already loaded for some reason when script runs
+    if (document.readyState !== 'loading') {
+        applyCustomUserDisplayNames_TaskView();
+    }
+
+    function handleDeleteUser(event) {
+        if (event.target.classList.contains('button-delete-user')) {
+            const usernameToDelete = event.target.dataset.username;
+            if (!usernameToDelete) {
+                alert("Error: Username not specified for deletion.");
+                return;
+            }
+
+            const confirmation = confirm(`Are you sure you want to permanently delete user '${usernameToDelete}' and all their data? This action cannot be undone.`);
+            if (confirmation) {
+                fetch(`/admin/delete_user/${usernameToDelete}`, {
+                    method: 'POST',
+                    headers: {
+                        // Flask typically uses CSRF tokens for POST from forms, but fetch might need it if enabled globally.
+                        // For now, assuming basic POST works or session implies admin rights are enough.
+                        'Content-Type': 'application/json' // Or 'application/x-www-form-urlencoded' if backend expects form data
+                    }
+                    // body: JSON.stringify({}) // No body needed if username is in URL
+                })
+                .then(response => {
+                    // Check if redirect happened (response.redirected) or if it's a JSON response indicating success/failure
+                    if (response.ok || response.redirected) {
+                        // If server redirects, browser will follow. If not, and we get OK, we might need to manually redirect.
+                        alert(`User '${usernameToDelete}' deletion process initiated.`);
+                        window.location.href = "{{ url_for('index') }}"; // Redirect to index after deletion
+                    } else {
+                        // Try to get error message if server sends one as JSON (though it flashes and redirects)
+                        response.json().then(data => {
+                            alert(`Error deleting user: ${data.message || 'Unknown server error'}`);
+                        }).catch(() => {
+                            alert(`Error deleting user '${usernameToDelete}'. Status: ${response.status}. Please check server logs or flashed messages on the redirected page.`);
+                             // It's likely the server already flashed a message and redirected, so this alert might be redundant or appear on wrong page.
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during delete user fetch:', error);
+                    alert(`An error occurred while trying to delete user '${usernameToDelete}'.`);
+                });
+            }
+        }
+    }
+
+    document.addEventListener('click', handleDeleteUser);
+
     </script>
 </body>
 </html>

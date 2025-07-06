@@ -203,6 +203,56 @@
     if (typeof updateClockAndDate === 'function') {
        setInterval(updateClockAndDate, 1000);
     }
+
+    function applyCustomUserDisplayNames_Dashboard() {
+        // Leaderboard
+        const leaderboardItems = document.querySelectorAll('.content-area ol li');
+        leaderboardItems.forEach(item => {
+            const nameSpan = item.querySelector('span:first-child'); // "1. UserName"
+            if (nameSpan) {
+                const match = nameSpan.textContent.match(/^\d+\.\s*(.+)$/);
+                if (match && match[1]) {
+                    const originalUserName = match[1].trim();
+                    const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+                    if (storedDisplayName) {
+                        const numericPrefix = nameSpan.textContent.match(/^\d+\.\s*/)[0];
+                        nameSpan.textContent = numericPrefix + storedDisplayName;
+                    }
+                }
+            }
+        });
+
+        // Task Completion Graph
+        const graphUserLabels = document.querySelectorAll('.graph-bars-area .graph-day-column > div:last-child'); // The div with username
+        graphUserLabels.forEach(label => {
+            const originalUserName = label.textContent.trim();
+            const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+            if (storedDisplayName) {
+                label.textContent = storedDisplayName;
+            }
+        });
+        const graphBarTitles = document.querySelectorAll('.graph-bars-area .graph-day-column .bar[title]'); // The bar itself with title attribute
+        graphBarTitles.forEach(bar => {
+            const title = bar.getAttribute('title'); // "UserName - X tasks"
+            if(title){
+                const parts = title.split(' - ');
+                if(parts.length > 0){
+                    const originalUserName = parts[0].trim();
+                    const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+                    if (storedDisplayName) {
+                        bar.setAttribute('title', storedDisplayName + (parts.length > 1 ? ' - ' + parts.slice(1).join(' - ') : ''));
+                    }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        applyCustomUserDisplayNames_Dashboard();
+    });
+    if (document.readyState !== 'loading') {
+        applyCustomUserDisplayNames_Dashboard();
+    }
     </script>
 </body>
 </html>

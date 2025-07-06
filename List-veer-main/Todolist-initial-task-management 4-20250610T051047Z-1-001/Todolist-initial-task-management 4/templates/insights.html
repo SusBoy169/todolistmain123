@@ -124,6 +124,34 @@
         updateClockISTInsights();
     }
     setInterval(updateClockISTInsights, 1000);
+
+    function applyCustomUserDisplayNames_Insights() {
+        const userCards = document.querySelectorAll('.user-analytics-card');
+        userCards.forEach(card => {
+            const headerNameElement = card.querySelector('.user-details h3');
+            if (headerNameElement) {
+                const originalUserName = headerNameElement.textContent.trim();
+                const storedDisplayName = localStorage.getItem(`user_${originalUserName}_displayName`);
+                if (storedDisplayName) {
+                    headerNameElement.textContent = storedDisplayName;
+
+                    // Also update the quote if it contains the old username
+                    const quoteElement = card.querySelector('p.quote em');
+                    if (quoteElement && quoteElement.textContent.includes(originalUserName)) {
+                        quoteElement.textContent = quoteElement.textContent.replace(originalUserName, storedDisplayName);
+                    }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        applyCustomUserDisplayNames_Insights();
+    });
+    if (document.readyState !== 'loading') {
+        applyCustomUserDisplayNames_Insights();
+    }
+
     </script>
 </body>
 </html>

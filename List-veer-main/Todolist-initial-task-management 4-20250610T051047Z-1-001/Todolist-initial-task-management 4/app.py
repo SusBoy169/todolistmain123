@@ -299,6 +299,72 @@ def add_user_admin():
     flash(f"User '{new_username_formatted}' added successfully.", 'success')
     return redirect(url_for('index'))
 
+@app.route('/admin/delete_user/<username>', methods=['POST'])
+def delete_user_admin(username):
+    if not session.get('is_admin_mode', False):
+        flash('Admin access required to delete users.', 'error')
+        return redirect(url_for('task_view')) # Or index
+
+    if username not in users:
+        flash(f"User '{username}' not found or already deleted.", 'error')
+        return redirect(url_for('index'))
+
+    if len(users) <= 1:
+        flash("Cannot delete the last user.", "error")
+        return redirect(url_for('task_view', user=username if username in users else None))
+
+
+    try:
+        # Remove from global list
+        if username in users:
+            users.remove(username)
+
+        # Remove from users.json data
+        all_user_data = get_all_user_data() # get_all_user_data might re-add if based on old global users list
+                                            # So, it's critical that global `users` list is updated first.
+                                            # Or, modify get_all_user_data to not auto-add if a specific flag is passed.
+                                            # For now, let's assume get_all_user_data will reflect the current global `users` list.
+                                            # A safer way is to load, modify, save directly.
+
+        current_users_json_path = os.path.join(DATA_DIR, "users.json")
+        loaded_user_data_direct = {}
+        try:
+            with open(current_users_json_path, 'r') as f:
+                loaded_user_data_direct = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # This case means users.json is missing/corrupt, which get_all_user_data would have tried to fix.
+            # If it's still an issue, deleting a user from a non-existent/corrupt main file is problematic.
+            flash("Error: Main user data file is missing or corrupt. Cannot delete user.", "error")
+            # Attempt to restore users list if removal failed at this stage
+            if username not in users: users.append(username) # Rollback global list change
+            return redirect(url_for('index'))
+
+        if username in loaded_user_data_direct:
+            del loaded_user_data_direct[username]
+            save_all_user_data(loaded_user_data_direct) # save_all_user_data writes the passed dict
+
+        # Delete user's task file
+        user_task_file = os.path.join(DATA_DIR, f"{username.lower()}_tasks.json")
+        if os.path.exists(user_task_file):
+            os.remove(user_task_file)
+
+        # Remove from TAB_THEME_COLORS if present
+        if username in TAB_THEME_COLORS:
+            del TAB_THEME_COLORS[username]
+
+        flash(f"User '{username}' and their tasks have been deleted.", 'success')
+        return redirect(url_for('index')) # Redirect to a general page
+
+    except Exception as e:
+        # Attempt to rollback global users list if error occurred after its modification
+        if username not in users:
+            users.append(username)
+            users.sort() # Or maintain original order if important and known
+
+        flash(f"An error occurred while deleting user '{username}': {str(e)}", 'error')
+        # Determine a safe redirect, maybe to task_view for the user if they still exist, or index
+        return redirect(url_for('index'))
+
 
 @app.route('/add_task/<username>', methods=['POST'])
 def add_task(username):
@@ -452,17 +518,19 @@ def trigger_daily_update():
 
 @app.route('/dashboard') # This is the old analytics dashboard
 def dashboard():
-    all_user_data_map = get_all_user_data()
+    all_user_data_map = get_all_user_data() # This is guaranteed to have entries for all in global `users`
     leaderboard_data = []
-    if isinstance(all_user_data_map, dict):
-        for username_entry_iter, data_entry in all_user_data_map.items():
-            if isinstance(data_entry, dict):
-                leaderboard_data.append((username_entry_iter, data_entry.get("stars", 0)))
-            else:
-                leaderboard_data.append((username_entry_iter, 0))
-    else:
-        for u_err_lead in users:
-             leaderboard_data.append((u_err_lead,0))
+    # Iterate through the global `users` list to build the leaderboard
+    # This ensures only active users are displayed and in the correct global `users` order (before sorting by stars)
+    for user_name_active in users:
+        user_detail = all_user_data_map.get(user_name_active) # Should always find an entry due to get_all_user_data
+        if user_detail and isinstance(user_detail, dict):
+            leaderboard_data.append((user_name_active, user_detail.get("stars", 0)))
+        else:
+            # Fallback if data is somehow missing or malformed for an active user (should be rare)
+            leaderboard_data.append((user_name_active, 0))
+            print(f"Warning: Could not retrieve details for active user '{user_name_active}' for leaderboard. Defaulting to 0 stars.")
+
     leaderboard_data.sort(key=lambda x: x[1], reverse=True)
 
     task_completion_data_list = []
